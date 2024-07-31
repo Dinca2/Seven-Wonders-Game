@@ -14,12 +14,12 @@ class Board:
         print(f"Time: {self.time}")
         for x in range(1,self.num_stages + 1):
             built = ""
-            if self.stage + 1 >= x:
+            if self.stage >= x:
                 built = " (built)"
             print(f"Stage {x}{built}: \n\tCost: {self.get_stage_cost(x - 1, view=True)}\n\tReward: {self.get_stage_reward(x - 1, view=True)}")
                 
         
-    def get_stage(self, view=False):
+    def get_stage(self,view=False):
         return self.stage
     
     def get_start(self):
@@ -39,7 +39,8 @@ class Board:
         return self.name
     
     def next_stage(self):
-        self.stage += 1
+        if self.stage < 2:
+            self.stage += 1
     
     def set_rewards(selfm,rewards):
         rewards = rewards.to_string(index=False).split("-")

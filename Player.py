@@ -1,19 +1,25 @@
 import random
+import Events as e
 class Player:
     def __init__(self,name,board,ai=False):
         self.name=name
         self.board=board
         self.is_ai=ai
+        
         self.hand={}
         self.available_cards = {}
         self.unavailable = {}
+        
         self.stage = {"available":False, "trade":{}}
+        
         self.resources={"wood":0,"stone":0,"brick":0,"ore":0,"glass":0,"silk":0,"paper":0,"coin":3, "any":0, "any_rare":0, "choice":{}}
         self.special_resources={"victory":0,"military":0,"cog":0,"compass":0,"tablet":0, "any_science":0, "tokens":{}}
-        self.colors = {}
+        self.colors = {"brown":0, "white":0, "yellow":0, "grenn":0, "red":0, "blue":0,"purple":0}
+        self.end_events = {}
         self.add_resources([board.get_start()], is_card=False)
         self.build = ["free", "none"]
         self.build_view = {}
+        
         self.trade_cards = {}
         self.left_neighbor = ""
         self.right_neighbor = ""
@@ -22,6 +28,7 @@ class Player:
         self.left_coins = 0
         self.right_coins = 0
         
+        self.event_handler = e.Events().event_handler
         
         
     def set_hand(self,hand):
@@ -164,6 +171,12 @@ class Player:
         del self.hand[card_name]
         return self.hand
     
+    def activate_end_events(self):
+        for event in self.end_events:
+            params = self.end_events[event][0]
+            e = self.end_events[event][1]
+            e(*params)
+            
     def confirm_trade(self, card_name):
         check = self.hand[card_name]
         left_neighbor = self.left_neighbor.get_name()
@@ -183,11 +196,7 @@ class Player:
             trade_resources = self.stage["trade"]
         elif card_name in self.trade_cards:
             trade_resources = self.trade_cards[card_name]
-        else:
-            print("error")
-            return False
         
-        print(f"trade resources_________ {trade_resources}")
         for r in trade_resources:
             for left_cost in left_check:
                 while left_check[left_cost] > 0 and left_cost != "market" and left_cost != "post":
@@ -200,7 +209,7 @@ class Player:
                 while right_check[right_cost] > 0 and right_cost != "market" and right_cost != "post":
                     right_check[right_cost] -= 1
                     needed_resources[right_cost] += 1
-        print(f"needed resources_________ {needed_resources}")
+                    
         left_check = self.trade_cards[card_name]["left"].copy()
         right_check = self.trade_cards[card_name]["right"].copy()
         trade_partners = {left_neighbor:left_check, right_neighbor:right_check} 
@@ -231,9 +240,7 @@ class Player:
                         elif trade_partners[trade_partner][r] == 0:
                             print(f"{trade_partner} does not have enough {r} to trade")
                     
-                    neighbor = "left"
-                    if trade_partner == right_neighbor:
-                        neighbor = "right"
+                    
                     trade_cost = trade_partners[trade_partner]["post"]
                     if r in rare_resource:
                         trade_cost = trade_partners[trade_partner]["market"]
@@ -370,6 +377,12 @@ class Player:
     def get_hand(self):
         return self.hand
     
+    def get_color(self, color):
+        return self.colors[color]
+    
+    def get_board(self):
+        return self.board
+
     def is_ai(self):
         return self.is_ai
     
@@ -400,7 +413,14 @@ class Player:
                 self.colors[color] += 1
             else:
                 self.colors[color] = 1
-                  
+            print(products[:5])
+            event = ""
+            event_name = ""
+            if products[:5] == "EVENT":
+                event_name = products[6:]
+                print(event_name)
+                event = self.event_handler(products[6:],self)
+                event(self) #triggers event
         
         for r in products:
             if r in self.resources:
@@ -418,18 +438,9 @@ class Player:
                 self.resources["choice"].update(choice)
             else:
                 self.special_resources[r] = "Built"
-                
-    def view_hand(self):
-        view = True
-        print(f"{self.name}'s hand: ")
-        for name in self.hand:
-            card = self.hand[name]
-            available = "Not available"
-            if name in self.available_cards:
-                available = "Available"
-            elif name in self.trade_cards:
-                available = "Available through trade"
-            print(f"{card.get_name(view)}:\n\tCost: {card.get_cost(view)} ({available})\n\tProduces: {card.get_product(view)}\n\tChain: {card.get_build(view)}")
+    
+    def add_end_event(self, event_name, params, event):
+        self.end_events[event_name] = [params,event]
         
     def available(self,hand):
         rare_resource = ["glass","silk","paper"]
@@ -440,7 +451,7 @@ class Player:
             trade = {}
             card_cost = hand[card].get_cost().copy()
             
-            if card not in self.build and "free" not in card_cost: #build chain
+            if card not in self.build and "free" not in card_cost:
                 for cost in card_cost:
                     if check[cost] > 0:
                         check[cost] -= 1
@@ -467,6 +478,7 @@ class Player:
             if available:
                 self.available_cards[card] = hand[card]
             else:
+                print(f" trade card_cost_______________ {card_cost}")
                 can_trade, trade = self.trade_available(card_cost)
                 if can_trade:
                     self.trade_cards[card] = trade
@@ -523,12 +535,14 @@ class Player:
                     #print(cost in left_check["choice"].values())
                     if cost in left_check["choice"].keys():
                         left_cost += left_trade["post"]
+                        left_trade[cost] += 1
                         left_has_trade = True
                         del left_check["choice"][cost]
                     elif cost in left_check["choice"].values():
                         position = list(left_check["choice"].values()).index(cost)
                         key_list = list(left_check["choice"].keys())
                         key = key_list[position]
+                        left_trade[cost] += 1
                         left_has_trade = True
                         del left_check["choice"][key]
                     #print(f"after trade left choice_________ {left_check['choice']}")
@@ -553,6 +567,7 @@ class Player:
                     
                     if cost in right_check["choice"].keys():
                         right_cost += right_trade["post"]
+                        right_trade[cost] += 1
                         right_has_trade = True
                         del right_check["choice"][cost]
                     elif cost in right_check["choice"].values():
@@ -560,6 +575,7 @@ class Player:
                         key_list = list(right_check["choice"].keys())
                         key = key_list[position]
                         right_has_trade = True
+                        right_trade[cost] += 1
                         del right_check["choice"][key]
                     #print(f"after trade right choice_________ {right_check['choice']}")
             if right_has_trade:
@@ -598,4 +614,16 @@ class Player:
         print(f"({human})")
         print(f"Name: {self.get_name()}")
         print(f"Board: {self.board.get_name()}")
+        
+    def view_hand(self):
+        view = True
+        print(f"{self.name}'s hand: ")
+        for name in self.hand:
+            card = self.hand[name]
+            available = "Not available"
+            if name in self.available_cards:
+                available = "Available"
+            elif name in self.trade_cards:
+                available = "Available through trade"
+            print(f"{card.get_name(view)}:\n\tCost: {card.get_cost(view)} ({available})\n\tProduces: {card.get_product(view)}\n\tChain: {card.get_build(view)}")
         

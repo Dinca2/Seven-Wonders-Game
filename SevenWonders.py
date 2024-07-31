@@ -201,8 +201,6 @@ class SevenWonders:
                 else:
                     tie[name] = {"right":right.get_name()}
         
-        print(winners)
-        print(tie)
         for name in self.Players:
             if name in winners:
                 if len(winners[name]) > 1:
@@ -213,18 +211,66 @@ class SevenWonders:
                     print(f"{name} won their conflict against {win_name}")
             if name in tie:
                 if len(tie[name]) > 1:
-                    print(f"In their conflict against {winners[name]['left']} and {winners[name]['right']}, {name} tied with both!")
+                    print(f"In their conflict against {tie[name]['left']} and {tie[name]['right']}, {name} tied with both!")
                 else:
                     neighbor = list(tie[name].keys())[0]
                     tie_name = tie[name][neighbor]
                     print(f"{name} was tied in their conflict against {tie_name}")
-
+                    
+    def add_science_vp(self, player):
+        resources = player.get_resources(special=True)
+        science = {symbol:resources[symbol] for symbol in ("cog", "compass", "tablet", "any_science") if symbol in resources}
+        
+        all = True
+        max = {"cog":(science["cog"] + science["any_science"])**2}
+        if science["any_science"] > 0:
+            has_zero = []
+            for symbol in science:
+                if (science[symbol] + science["any_science"])**2 > max[symbol]: #finds max science value
+                    max = {symbol:science[symbol]**2}
+                if science[symbol] == 0:
+                    has_zero.append(symbol)
+                    all = False
+            if max[list(max.keys())[0]] < 7 and len(has_zero) == 1:
+                science[has_zero[0]] = 1
+                all = True
+            elif max[list(max.keys())[0]] < 7 and len(has_zero) == 2 and science["any_science"] > 1:
+                science[has_zero[0]] = 1
+                science[has_zero[1]] = 1
+                all = True
+            else:
+                science[list(max.keys())[0]] += science["any_science"]
+        
+        
+        vp = 0
+        for symbol in science:
+            vp += science[symbol] ** 2
+        if all:
+            vp += 7
+        
+        victory = []
+        for v in range(0,vp):
+            victory.append("victory")
+        
+        player.add_resource(victory, is_card=False)
+        return vp
+                
+    def tally_victort(self):
+        
+        military = 0
+        treasury = 0
+        wonder = 0
+        structures = 0
+        commerce = 0 #yellow cards
+        guilds = 0
+        science = self.add_science_vp()
+        
+        
     def play(self):
         if not self.Players:
             print("Please setup players first")
             return
         hand = {}
-        first_hand = {}
         num_cards = len(self.decks[0]) #all ages should have the same # of cards
         initial_hand_size = int(num_cards/self.num_players)
         action_list = {1:"played", 2:"discarded", 3:"built a stage of their wonder with"}
@@ -274,5 +320,16 @@ class SevenWonders:
                     self.Players[name].set_hand(new_hand)
                 turn += 1
             self.resolve_conflicts(age)
-
-
+        
+        for n in self.Players:
+            self.Players[n].activate_end_events()
+            
+        ranking = self.tally_victory()
+        for i,rank in enumerate(ranking):
+            if i == 0:
+                print(f"1st place: {rank}")
+            elif i == 1:
+                print(f"2nd place: {rank}")
+            else:
+                print(f"{i}th place: {rank}")
+            

@@ -1,5 +1,5 @@
 from SevenWonders import SevenWonders
 
-sw = SevenWonders(fast_setup=True)
+sw = SevenWonders(num_human=2, fast_setup=True)
 sw.setup()
 sw.play()
