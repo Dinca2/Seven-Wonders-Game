@@ -1,0 +1,69 @@
+age,name,cost,build,product,color,player_count
+1,lumber yard,free,none,wood,brown,3
+1,stone pit,free,none,stone,brown,3
+1,clay pool,free,none,brick,brown,3
+1,ore vein,free,none,ore,brown,3
+1,clay pit,coin,none,brick/ore,brown,3
+1,timber yard,coin,none,stone/wood,brown,3
+1,loom,free,none,silk,white,3
+1,glassworks,free,none,glass,white,3
+1,press,free,none,paper,white,3
+1,baths,stone,aqueduct,"victory,victory,victory",blue,3
+1,altar,free,pantheon,"victory,victory,victory",blue,3
+1,theater,free,gardens,"victory,victory",blue,3
+1,east trading post,free,forum,"right trade",yellow,3
+1,west trading post,free,forum,"left trade",yellow,3
+1,marketplace,free,caravansery,"market",yellow,3
+1,stockade,wood,none,military,red,3
+1,barracks,ore,none,military,red,3
+1,guard tower,brick,none,military,red,3
+1,apothecary,silk,"stables,dispensary",compass,green,3
+1,workshop,glass,"archery range,labratory",cog,green,3
+1,scriptorium,paper,"courthouse,library",tablet,green,3
+2,sawmill,coin,none,"wood,wood",brown,3
+2,quarry,coin,none,"stone,stone",brown,3
+2,brickyard,coin,none,"brick,brick",brown,3
+2,foundary,coin,none,"ore,ore",brown,3
+2,loom,free,none,silk,white,3
+2,glassworks,free,none,glass,white,3
+2,press,free,none,paper,white,3
+2,aqueduct,"stone,stone,stone",none,"victory,victory,victory,victory,victory",blue,3
+2,temple,"wood,brick,glass",none,"victory,victory,victory",blue,3
+2,statue,"ore,ore,wood",none,"victory,victory,victory,victory",blue,3
+2,courthouse,"brick,brick,silk",none,"victory,victory,victory,victory",blue,3
+2,forum,"brick,brick",haven,any_rare,yellow,3
+2,caravansery,"wood,wood",lighthouse,any,yellow,3
+2,vineyard,free,none,coin,yellow,3
+2,walls,"stone,stone,stone",fortifications,"military, military",red,3
+2,stables,"ore,brick,wood",none,"military,military",red,3
+2,archery range,"wood,wood,ore",none,"military, military",red,3
+2,dispensary,"ore,ore,glass","arena,lodge",compass,green,3
+2,laboratory,"brick,brick,paper","siege workshop,observatory",cog,green,3
+2,library,"stone,stone,silk","senate,university",tablet,green,3
+2,school,"wood,paper","academy,study",tablet,green,3
+3,pantheon,"brick,brick,ore,paper,silk,glass",none,"victory,victory,victory,victory,victory,victory,victory",blue,3
+3,gardens,"brick,brick,wood",none,"victory,victory,victory,victory,victory",blue,3
+3,town hall,"stone,stone,ore,glass",none,"victory,victory,victory,victory,victory,victory",blue,3
+3,palace,"brick,wood,ore,stone,glass,paper,silk",none,"victory,victory,victory,victory,victory,victory,victory,victory",blue,3
+3,senate,"wood,wood,ore,stone",none,"victory,victory,victory,victory,victory,victory",blue,3
+3,haven,"ore,wood,silk",none,EVENT brown victory,yellow,3
+3,lighthouse,"stone,glass",none,EVENT yellow victory,yellow,3
+3,arena,"stone,stone,ore",none,EVENT wonder stages,yellow,3
+3,fortifications,"ore,ore,ore,stone",none,"military,military,military",red,3
+3,arsenal,"ore,wood,wood,silk",none,"military,military,military",red,3
+3,siege workshop,"wood,brick,brick,brick",none,"military,military,military",red,3
+3,lodge,"brick,brick,silk,paper",none,compass,green,3
+3,observatory,"ore,ore,glass,silk",none,cog,green,3
+3,university,"wood,wood,paper,glass",none,tablet,green,3
+3,academy,"stone,stone,stone,glass",none,compass,green,3
+3,study,"wood,paper,silk",none,cog,green,3
+3,workers guild,"ore,ore,brick,stone,wood",none,EVENT brown neighbor victory,purple,3
+3,craftmens guild,"ore,ore,stone,stone",none,EVENT white neighbor victory,purple,3
+3,traders guild,"silk,paper",none,EVENT yellow neightbor victory,purple,3
+3,philosophers guild,"brick,brick,brick,silk,paper",none,EVENT green neighbor victory,purple,3
+3,spy guild,"brick,brick,brick,glass",none,EVENT red neighboor victory,purple,3
+3,strategy guild,"ore,ore,stone,silk",none,EVENT defeat neighbor,purple,3
+3,shipowners guild,"wood,wood,wood,paper,glass",none,EVENT ship guild,purple,3
+3,scientists guild,"ore,ore,wood,wood,paper",none,EVENT science guild,purple,3
+3,magistrates guild,"stone,wood,wood,wood,silk",none,EVENT blue neighbor victory,purple,3
+3,builders guild,"stone,stone,brick,brick,glass",none,EVENT wonder built,purple,3
