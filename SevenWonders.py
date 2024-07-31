@@ -257,6 +257,7 @@ class SevenWonders:
                 
     def tally_victort(self):
         
+        
         military = 0
         treasury = 0
         wonder = 0

@@ -33,7 +33,7 @@ age,name,cost,build,product,color,player_count
 2,courthouse,"brick,brick,silk",none,"victory,victory,victory,victory",blue,3
 2,forum,"brick,brick",haven,any_rare,yellow,3
 2,caravansery,"wood,wood",lighthouse,any,yellow,3
-2,vineyard,free,none,EVENT brown_coin,yellow,3
+2,vineyard,free,none,"EVENT brown_coin",yellow,3
 2,walls,"stone,stone,stone",fortifications,"military, military",red,3
 2,stables,"ore,brick,wood",none,"military,military",red,3
 2,archery range,"wood,wood,ore",none,"military, military",red,3
@@ -46,9 +46,9 @@ age,name,cost,build,product,color,player_count
 3,town hall,"stone,stone,ore,glass",none,"victory,victory,victory,victory,victory,victory",blue,3
 3,palace,"brick,wood,ore,stone,glass,paper,silk",none,"victory,victory,victory,victory,victory,victory,victory,victory",blue,3
 3,senate,"wood,wood,ore,stone",none,"victory,victory,victory,victory,victory,victory",blue,3
-3,haven,"ore,wood,silk",none,EVENT brown_victory,yellow,3
-3,lighthouse,"stone,glass",none,EVENT yellow_victory,yellow,3
-3,arena,"stone,stone,ore",none,EVENT areana,yellow,3
+3,haven,"ore,wood,silk",none,"EVENT brown_victory",yellow,3
+3,lighthouse,"stone,glass",none,"EVENT yellow_victory",yellow,3
+3,arena,"stone,stone,ore",none,"EVENT areana",yellow,3
 3,fortifications,"ore,ore,ore,stone",none,"military,military,military",red,3
 3,arsenal,"ore,wood,wood,silk",none,"military,military,military",red,3
 3,siege workshop,"wood,brick,brick,brick",none,"military,military,military",red,3
@@ -57,13 +57,13 @@ age,name,cost,build,product,color,player_count
 3,university,"wood,wood,paper,glass",none,tablet,green,3
 3,academy,"stone,stone,stone,glass",none,compass,green,3
 3,study,"wood,paper,silk",none,cog,green,3
-3,workers guild,"ore,ore,brick,stone,wood",none,EVENT brown_neighbor_victory,purple,3
-3,craftmens guild,"ore,ore,stone,stone",none,EVENT white_neighbor_victory,purple,3
-3,traders guild,"silk,paper",none,EVENT yellow_neightbor_victory,purple,3
-3,philosophers guild,"brick,brick,brick,silk,paper",none,EVENT green_neighbor_victory,purple,3
-3,spy guild,"brick,brick,brick,glass",none,EVENT red_neighboor_victory,purple,3
-3,strategy guild,"ore,ore,stone,silk",none,EVENT defeat_neighbor,purple,3
-3,shipowners guild,"wood,wood,wood,paper,glass",none,EVENT ship_guild,purple,3
-3,scientists guild,"ore,ore,wood,wood,paper",none,EVENT science_guild,purple,3
-3,magistrates guild,"stone,wood,wood,wood,silk",none,EVENT blue_neighbor_victory,purple,3
-3,builders guild,"stone,stone,brick,brick,glass",none,EVENT wonder_built,purple,3
+3,workers guild,"ore,ore,brick,stone,wood",none,"EVENT brown_neighbor_victory",purple,3
+3,craftmens guild,"ore,ore,stone,stone",none,"EVENT white_neighbor_victory",purple,3
+3,traders guild,"silk,paper",none,"EVENT yellow_neightbor_victory",purple,3
+3,philosophers guild,"brick,brick,brick,silk,paper",none,"EVENT green_neighbor_victory",purple,3
+3,spy guild,"brick,brick,brick,glass",none,"EVENT red_neighboor_victory",purple,3
+3,strategy guild,"ore,ore,stone,silk",none,"EVENT defeat_neighbor",purple,3
+3,shipowners guild,"wood,wood,wood,paper,glass",none,"EVENT ship_guild",purple,3
+3,scientists guild,"ore,ore,wood,wood,paper",none,"EVENT science_guild",purple,3
+3,magistrates guild,"stone,wood,wood,wood,silk",none,"EVENT blue_neighbor_victory",purple,3
+3,builders guild,"stone,stone,brick,brick,glass",none,'EVENT wonder_built",purple,3

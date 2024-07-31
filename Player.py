@@ -28,9 +28,6 @@ class Player:
         self.left_coins = 0
         self.right_coins = 0
         
-        self.event_handler = e.Events().event_handler
-        
-        
     def set_hand(self,hand):
         self.available_cards = {}
         self.trade_cards = {}
@@ -93,7 +90,7 @@ class Player:
                 card_name = random.choice(list(self.trade_cards))
                 action = 1 #trade
             else:
-                card_name = random.choice(list(self.unavailable_cards))
+                card_name = random.choice(list(self.unavailable))
                 action = 2
         
         return action, card_name
@@ -232,13 +229,16 @@ class Player:
                     
                     while not picked:
                         trade_partner = input(f"From whom do you want to trade one {r} from? {left_neighbor} or {right_neighbor}? (0 to cancel trade) ")
-                        if trade_partner == "0": #cancel trade
+                        if trade_partner == left_neighbor or right_neighbor:
+                            picked = True
+                        elif trade_partner == "0": #cancel trade
                             print("trade canceled")
                             return False
                         elif trade_partner != left_neighbor and trade_partner != right_neighbor:
                             print(f"Can't recongnize {trade_partner}")
                         elif trade_partners[trade_partner][r] == 0:
-                            print(f"{trade_partner} does not have enough {r} to trade")
+                            print(f"{trade_partner} does not have enough {r} to trade. Pick other neighbor or cancel trade to reset")
+                        
                     
                     
                     trade_cost = trade_partners[trade_partner]["post"]
@@ -402,7 +402,7 @@ class Player:
     def add_resources(self, resource, is_card=True, is_token=False):
         
         products = resource
-        
+        is_event = False
         if is_card and not is_token:
             products = resource.get_product()
             if resource.get_build()[0] != "none":
@@ -413,31 +413,31 @@ class Player:
                 self.colors[color] += 1
             else:
                 self.colors[color] = 1
-            print(products[:5])
             event = ""
             event_name = ""
-            if products[:5] == "EVENT":
-                event_name = products[6:]
-                print(event_name)
-                event = self.event_handler(products[6:],self)
-                event(self) #triggers event
+            if products[0][:5] == "EVENT":
+                is_event = True
+                event_name = products[0][6:]
+                event = e.event_handler(event_name)
+                event(self) #triggers/sets event
         
-        for r in products:
-            if r in self.resources:
-                self.resources[r]+=1
-            elif r in self.special_resources:
-                self.special_resources[r]+=1
-            elif is_token:
-                if r in self.special_resources["tokens"]:
-                    self.special_resources["tokens"][r] += 1
+        if not is_event:
+            for r in products:
+                if r in self.resources:
+                    self.resources[r]+=1
+                elif r in self.special_resources:
+                    self.special_resources[r]+=1
+                elif is_token:
+                    if r in self.special_resources["tokens"]:
+                        self.special_resources["tokens"][r] += 1
+                    else:
+                        self.special_resources["tokens"][r] = 1                    
+                elif "/" in r:
+                    split = r.split('/')
+                    choice = {split[0]:split[1]}
+                    self.resources["choice"].update(choice)
                 else:
-                    self.special_resources["tokens"][r] = 1                    
-            elif "/" in r:
-                split = r.split('/')
-                choice = {split[0]:split[1]}
-                self.resources["choice"].update(choice)
-            else:
-                self.special_resources[r] = "Built"
+                    self.special_resources[r] = "Built"
     
     def add_end_event(self, event_name, params, event):
         self.end_events[event_name] = [params,event]
@@ -450,26 +450,27 @@ class Player:
             available = True
             trade = {}
             card_cost = hand[card].get_cost().copy()
-            
             if card not in self.build and "free" not in card_cost:
-                for cost in card_cost:
+                for i,cost in enumerate(card_cost):
+                    
                     if check[cost] > 0:
                         check[cost] -= 1
-                        card_cost.remove(cost)
+                        card_cost[i] = ""
                     elif cost in rare_resource and check["any_rare"] > 0:
                         check["any_rare"] -=1
-                        card_cost.remove(cost)
+                        card_cost[i] = ""
                     elif check["any"] > 0:
                         check["any"] -=1
-                        card_cost.remove(cost)
+                        card_cost[i] = ""
                     elif cost in check["choice"].keys():
-                        card_cost.remove(cost)
+                        card_cost[i] = ""
                         del check["choice"][cost]
+                        
                     elif cost in check["choice"].values():
                         position = list(check["choice"].values()).index(cost)
                         key_list = list(check["choice"].keys())
                         key = key_list[position]
-                        card_cost.remove(cost)
+                        card_cost[i] = ""
                         del check["choice"][key]
                     else:
                         available = False
@@ -478,7 +479,7 @@ class Player:
             if available:
                 self.available_cards[card] = hand[card]
             else:
-                print(f" trade card_cost_______________ {card_cost}")
+                card_cost = list(filter(None, card_cost))
                 can_trade, trade = self.trade_available(card_cost)
                 if can_trade:
                     self.trade_cards[card] = trade
@@ -495,6 +496,7 @@ class Player:
         right_check = self.right_neighbor.get_resources().copy()
         left_check["choice"] = self.left_neighbor.get_resources()["choice"].copy()
         right_check["choice"] = self.right_neighbor.get_resources()["choice"].copy()
+        
         if len(left_check) == 0 or not isinstance(left_check, dict):
             print("ERROR")
             return
@@ -506,6 +508,8 @@ class Player:
         right_trade = {"market": 2,"post":2, "wood":0,"stone":0,"brick":0,"ore":0,"glass":0,"silk":0,"paper":0}
         left_cost = 0
         right_cost = 0
+        trade_cost = 0
+        
         if "left trade" in self.special_resources:
             left_trade["post"] = 1
         if "right trade" in self.special_resources:
@@ -514,97 +518,91 @@ class Player:
             left_trade["market"] = 1
             right_trade["market"] = 1
         
+        
         for cost in check:
-            left_has_trade = False
-            right_has_trade = False
             
             #can only trade for basic or rare resources and no coin
             if cost not in left_trade: 
                 return False, {}
             
-            if cost in left_check:
-                if left_check[cost] > 0:
-                    left_check[cost] -= 1
-                    left_trade[cost] += 1
-                    left_has_trade = True
-                
-                elif left_check["choice"]:
-                    #print(f"trade left choice_________ {left_check['choice']}")
-                    #print(cost)
-                    #print( cost in left_check["choice"].keys())
-                    #print(cost in left_check["choice"].values())
-                    if cost in left_check["choice"].keys():
-                        left_cost += left_trade["post"]
-                        left_trade[cost] += 1
-                        left_has_trade = True
-                        del left_check["choice"][cost]
-                    elif cost in left_check["choice"].values():
-                        position = list(left_check["choice"].values()).index(cost)
-                        key_list = list(left_check["choice"].keys())
-                        key = key_list[position]
-                        left_trade[cost] += 1
-                        left_has_trade = True
-                        del left_check["choice"][key]
-                    #print(f"after trade left choice_________ {left_check['choice']}")
-                
-            if left_has_trade:
-                if cost in rare_resource:
-                    left_cost += left_trade["market"]
-                else:
-                    left_cost += left_trade["post"]
-            
-            if cost in right_check:
-                if right_check[cost] > 0:
-                    right_check[cost] -= 1
-                    right_trade[cost] += 1
-                    right_has_trade = True
-                
-                elif right_check["choice"]:
-                    #print(f"trade right choice_________ {right_check['choice']}")
-                    #print(cost)
-                    #print( cost in right_check["choice"].keys())
-                    #print(cost in right_check["choice"].values())
-                    
-                    if cost in right_check["choice"].keys():
-                        right_cost += right_trade["post"]
-                        right_trade[cost] += 1
-                        right_has_trade = True
-                        del right_check["choice"][cost]
-                    elif cost in right_check["choice"].values():
-                        position = list(right_check["choice"].values()).index(cost)
-                        key_list = list(right_check["choice"].keys())
-                        key = key_list[position]
-                        right_has_trade = True
-                        right_trade[cost] += 1
-                        del right_check["choice"][key]
-                    #print(f"after trade right choice_________ {right_check['choice']}")
-            if right_has_trade:
-                if cost in rare_resource:
-                    right_cost += right_trade["market"]
-                else:
-                    right_cost += right_trade["post"]
-            
-            if not (left_has_trade or right_has_trade) or (left_cost+right_cost > self.resources["coin"]) or not(left_check or right_check):
+            if left_check[cost] > 0 and right_check[cost] > 0:
+                left_check[cost] -= 1
+                left_trade[cost] += 1
+                right_trade[cost] += 1
+            elif left_check[cost] > 0:
+                left_check[cost] -= 1
+                left_trade[cost] += 1
+            elif right_check[cost] > 0:
+                right_check[cost] -= 1
+                right_trade[cost] += 1
+            elif cost in left_check["choice"].keys() and cost in right_check["choice"].keys():
+                left_trade[cost] += 1
+                right_trade[cost] += 1
+                del left_check["choice"][cost]
+            elif cost in left_check["choice"].values() and cost in right_check["choice"].values():
+                position = list(left_check["choice"].values()).index(cost)
+                key_list = list(left_check["choice"].keys())
+                key = key_list[position]
+                left_trade[cost] += 1
+                right_trade[cost] += 1
+                del left_check["choice"][key]
+            elif cost in left_check["choice"].keys():
+                left_trade[cost] += 1
+                del left_check["choice"][cost]
+            elif cost in left_check["choice"].values():
+                position = list(left_check["choice"].values()).index(cost)
+                key_list = list(left_check["choice"].keys())
+                key = key_list[position]
+                left_trade[cost] += 1
+                del left_check["choice"][key]
+            elif cost in right_check["choice"].values():
+                position = list(right_check["choice"].values()).index(cost)
+                key_list = list(right_check["choice"].keys())
+                key = key_list[position]
+                right_trade[cost] += 1
+                del right_check["choice"][key]
+            elif cost in right_check["choice"].keys():
+                right_trade[cost] += 1
+                del right_check["choice"][cost]
+            else:
                 return False, {}
+                
+            if cost in rare_resource:
+                left_cost = left_trade["market"]
+                right_cost = right_trade["market"]
+            else:
+                left_cost = left_trade["post"]
+                right_cost = right_trade["post"]
+            
+            #gets minimal trade cost
+            if left_cost < right_cost:
+                trade_cost += left_cost
+            else:
+                trade_cost += right_cost
+            
+            if trade_cost > self.resources["coin"]:
+                return False, {}
+            
         return True, {'left':left_trade, 'right':right_trade}
     
     def stage_available(self):
         check = self.resources.copy()
         available = True
         trade = {}
-        
         stage_cost = self.board.get_stage_cost(self.board.get_stage()) 
-        for cost in stage_cost:
+        for i, cost in enumerate(stage_cost):
             if check[cost] > 0:
                 check[cost] -= 1
-                stage_cost.remove(cost)
+                stage_cost[i] = ""
             else:
                 available = False 
-                can_trade, trade = self.trade_available(stage_cost)
                 break
         if available:
             self.stage["available"] = True
-        elif can_trade:
+        else:
+            stage_cost = list(filter(None,stage_cost))
+            can_trade, trade = self.trade_available(stage_cost)
+            self.stage["available"] = can_trade
             self.stage["trade"] = trade
     
     def view(self):
