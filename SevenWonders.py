@@ -206,14 +206,14 @@ class SevenWonders:
         for name in self.Players:
             if name in winners:
                 if len(winners[name]) > 1:
-                    print(f"{name} won their conflict against {winners['left']} and {winners['right']}!")
+                    print(f"{name} won their conflict against {winners[name]['left']} and {winners[name]['right']}!")
                 else:
                     neighbor = list(winners[name].keys())[0]
                     win_name = winners[name][neighbor]
                     print(f"{name} won their conflict against {win_name}")
             if name in tie:
                 if len(tie[name]) > 1:
-                    print(f"In their conflict against {winners['left']} and {winners['right']}, {name} tied with both!")
+                    print(f"In their conflict against {winners[name]['left']} and {winners[name]['right']}, {name} tied with both!")
                 else:
                     neighbor = list(tie[name].keys())[0]
                     tie_name = tie[name][neighbor]

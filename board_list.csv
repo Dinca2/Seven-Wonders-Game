@@ -3,6 +3,6 @@ Alexandria,glass,3,"stone,stone-ore,ore-paper,silk","vp3-any-vp7",day
 Babylon,wood,3,"brick,brick-ore,ore,silk-wood,wood,wood,wood","vp3-any_science-vp7",day
 Ephesos,paper,3,"brick,brick-wood,wood-ore,ore,glass","vp3-au9-vp7",day
 Gizah,stone,3,"wood,wood-brick,brick,silk-stone,stone,stone,stone","vp3-vp5-vp7",day
-Halikarnassos,silk,3,"ore,ore-glass,paper-stone,stone,stone","vp3-EVENT_play_discard-vp7"
+Halikarnassos,silk,3,"ore,ore-glass,paper-stone,stone,stone","vp3-EVENT_play_discard-vp7",day
 Olympia,brick,3,"stone,stone-wood,wood-brick,brick,brick","vp3-EVENT_olympia_special-vp7",day
 Rhodos,ore,3,"wood,wood-brick,brick,brick-ore,ore,ore,ore","vp3-military,military-vp7",day

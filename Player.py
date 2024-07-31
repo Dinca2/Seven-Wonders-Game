@@ -186,7 +186,8 @@ class Player:
         else:
             print("error")
             return False
-            
+        
+        print(f"trade resources_________ {trade_resources}")
         for r in trade_resources:
             for left_cost in left_check:
                 while left_check[left_cost] > 0 and left_cost != "market" and left_cost != "post":
@@ -199,7 +200,7 @@ class Player:
                 while right_check[right_cost] > 0 and right_cost != "market" and right_cost != "post":
                     right_check[right_cost] -= 1
                     needed_resources[right_cost] += 1
-        
+        print(f"needed resources_________ {needed_resources}")
         left_check = self.trade_cards[card_name]["left"].copy()
         right_check = self.trade_cards[card_name]["right"].copy()
         trade_partners = {left_neighbor:left_check, right_neighbor:right_check} 
@@ -441,10 +442,7 @@ class Player:
             
             if card not in self.build and "free" not in card_cost: #build chain
                 for cost in card_cost:
-                    if check[cost] == 0:
-                        available = False
-                        break
-                    elif check[cost] > 0:
+                    if check[cost] > 0:
                         check[cost] -= 1
                         card_cost.remove(cost)
                     elif cost in rare_resource and check["any_rare"] > 0:
@@ -453,21 +451,15 @@ class Player:
                     elif check["any"] > 0:
                         check["any"] -=1
                         card_cost.remove(cost)
-                    elif check["choice"]:
-                        print(f"check choice_________ {check['choice']}")
-                        print(cost)
-                        print( cost in check["choice"].keys())
-                        print(cost in check["choice"].values())
-                        if cost in check["choice"].keys():
-                            print("check choice______")
-                            card_cost.remove(cost)
-                            del check["choice"][cost]
-                        elif cost in check["choice"].values():
-                            position = list(check["choice"].values()).index(cost)
-                            key_list = list(check["choice"].keys())
-                            key = key_list[position]
-                            card_cost.remove(cost)
-                            del check["choice"][key]
+                    elif cost in check["choice"].keys():
+                        card_cost.remove(cost)
+                        del check["choice"][cost]
+                    elif cost in check["choice"].values():
+                        position = list(check["choice"].values()).index(cost)
+                        key_list = list(check["choice"].keys())
+                        key = key_list[position]
+                        card_cost.remove(cost)
+                        del check["choice"][key]
                     else:
                         available = False
                         break
@@ -537,7 +529,6 @@ class Player:
                         position = list(left_check["choice"].values()).index(cost)
                         key_list = list(left_check["choice"].keys())
                         key = key_list[position]
-                        print(key)
                         left_has_trade = True
                         del left_check["choice"][key]
                     #print(f"after trade left choice_________ {left_check['choice']}")
