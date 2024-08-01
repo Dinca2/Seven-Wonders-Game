@@ -4,7 +4,7 @@ def event_handler(event, expansions = ["base"]):
     #   events = ...
     #else:
     events = {"brown_coin":brown_coin,
-              "brow_victory":brown_victory,
+              "brown_victory":brown_victory,
               "yellow_victory":yellow_victory,
               "white_victory":white_victory,
               "arena":arena,

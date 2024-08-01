@@ -18,7 +18,7 @@ age,name,cost,build,product,color,player_count
 1,barracks,ore,none,military,red,3
 1,guard tower,brick,none,military,red,3
 1,apothecary,silk,"stables,dispensary",compass,green,3
-1,workshop,glass,"archery range,labratory",cog,green,3
+1,workshop,glass,"archery range,laboratory",cog,green,3
 1,scriptorium,paper,"courthouse,library",tablet,green,3
 2,sawmill,coin,none,"wood,wood",brown,3
 2,quarry,coin,none,"stone,stone",brown,3
@@ -34,9 +34,9 @@ age,name,cost,build,product,color,player_count
 2,forum,"brick,brick",haven,any_rare,yellow,3
 2,caravansery,"wood,wood",lighthouse,any,yellow,3
 2,vineyard,free,none,"EVENT brown_coin",yellow,3
-2,walls,"stone,stone,stone",fortifications,"military, military",red,3
+2,walls,"stone,stone,stone",fortifications,"military,military",red,3
 2,stables,"ore,brick,wood",none,"military,military",red,3
-2,archery range,"wood,wood,ore",none,"military, military",red,3
+2,archery range,"wood,wood,ore",none,"military,military",red,3
 2,dispensary,"ore,ore,glass","arena,lodge",compass,green,3
 2,laboratory,"brick,brick,paper","siege workshop,observatory",cog,green,3
 2,library,"stone,stone,silk","senate,university",tablet,green,3

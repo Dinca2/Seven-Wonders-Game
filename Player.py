@@ -124,7 +124,7 @@ class Player:
                 if self.stage["available"]:
                     if self.stage["trade"]:
                         self.confirm_trade("stage")
-                    card_name = input(f"what card do you want to discard to build {self.board.get_stage()}? ")
+                    card_name = input(f"what card do you want to discard to build stage {self.board.get_stage()+1} of your wonder? ")
                     conf_action = action_list[action] + "by discarding " + card_name
                     valid = True
                 else:

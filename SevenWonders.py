@@ -254,17 +254,35 @@ class SevenWonders:
         
         player.add_resource(victory, is_card=False)
         return vp
-                
+    
+    def add_military_vp(self, player):
+        tokens = player.get_resources(special=True)["tokens"]
+        token_values = {'age 1':1, "age 2":3, "age 3":5, "defeat":-1}
+        vp = 0
+        for token in tokens:
+            vp += token_values[token]
+
+        return vp
     def tally_victort(self):
         
+        ranking = {}
+        for name in self.Players:
+            player = self.Players[name]
+            military = self.add_military_vp(player)
+            treasury = int(player.get_resources()["coin"]/3)
+            #wonder = 0
+            #structures = 0
+            #commerce = 0 #yellow cards
+            #guilds = 0
+            science = self.add_science_vp(player)
+            total = military + treasury + science + player.get_resources(special=True)["victory"]
+            ranking[name] = total
         
-        military = 0
-        treasury = 0
-        wonder = 0
-        structures = 0
-        commerce = 0 #yellow cards
-        guilds = 0
-        science = self.add_science_vp()
+        ranking = sorted(ranking.items, key = lambda x: x[1])
+
+        return ranking
+
+
         
         
     def play(self):
@@ -328,9 +346,9 @@ class SevenWonders:
         ranking = self.tally_victory()
         for i,rank in enumerate(ranking):
             if i == 0:
-                print(f"1st place: {rank}")
+                print(f"1st place: {ranking[rank]}")
             elif i == 1:
-                print(f"2nd place: {rank}")
+                print(f"2nd place: {ranking[rank]}")
             else:
-                print(f"{i}th place: {rank}")
+                print(f"{i}th place: {ranking[rank]}")
             
