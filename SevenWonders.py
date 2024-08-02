@@ -97,14 +97,14 @@ class SevenWonders:
                 board_frame = board_list.loc[(board_list["name"] == board_name)]
                 board_list.drop(board_list[board_list["name"] == board_name].index, inplace=True)
             
-            board = Board(board_frame["name"],board_frame["start"],board_frame["num_stages"],board_frame["costs"],board_frame["rewards"],board_frame["time"])
+            board = Board(board_frame["name"],board_frame["start"],board_frame["color"],board_frame["num_stages"],board_frame["costs"],board_frame["rewards"],board_frame["time"])
             self.Players[name] = Player(name, board, ai=False)
         
         num_ai = self.num_players-self.num_human
         for ai in range(self.num_players-num_ai, self.num_players):
             board_frame = board_list.sample(replace=False)
             board_list.drop(board_frame.index, inplace=True)
-            board = Board(board_frame["name"],board_frame["start"],board_frame["num_stages"],board_frame["costs"],board_frame["rewards"],board_frame["time"])
+            board = Board(board_frame["name"],board_frame["start"],board_frame["color"],board_frame["num_stages"],board_frame["costs"],board_frame["rewards"],board_frame["time"])
             name = player_names[ai]
             self.Players[name] = Player(name, board, ai=True)
     
@@ -166,7 +166,7 @@ class SevenWonders:
             n_edges += 1
     
     def resolve_conflicts(self, age):
-        tokens = ["age 1","age 2", "age 3", "deafeat"]
+        tokens = ["age 1","age 2", "age 3", "defeat"]
         winners = {}
         tie = {}
         for name in self.Players:
@@ -263,19 +263,24 @@ class SevenWonders:
             vp += token_values[token]
 
         return vp
-    def tally_victort(self):
+    def tally_victory(self):
         
         ranking = {}
         for name in self.Players:
             player = self.Players[name]
+            print(name)
             military = self.add_military_vp(player)
+            print(military)
             treasury = int(player.get_resources()["coin"]/3)
+            print(treasury)
             #wonder = 0
             #structures = 0
             #commerce = 0 #yellow cards
             #guilds = 0
             science = self.add_science_vp(player)
+            print(science)
             total = military + treasury + science + player.get_resources(special=True)["victory"]
+            print(total)
             ranking[name] = total
         
         ranking = sorted(ranking.items, key = lambda x: x[1])
@@ -290,18 +295,18 @@ class SevenWonders:
             print("Please setup players first")
             return
         hand = {}
+        discard_pile = {}
         num_cards = len(self.decks[0]) #all ages should have the same # of cards
         initial_hand_size = int(num_cards/self.num_players)
-        action_list = {1:"played", 2:"discarded", 3:"built a stage of their wonder with"}
+        
         for age in range(0,3):
             #sets initial hand for each age
             for n in self.Players:
                 hand = {}
                 cards = random.sample(self.decks[age],k=initial_hand_size)
-                for c in cards:
-                    self.decks[age].remove(c)
-                for card in cards: #formats hand for each card be searched by card name
-                    hand[card.get_name()] = card
+                for card in cards:
+                    self.decks[age].remove(card)
+                    hand[card.get_name()] = card #formats hand for each card be searched by card name
                 self.Players[n].set_hand(hand)
                 
             turn = 0
@@ -311,10 +316,13 @@ class SevenWonders:
                 old_hands = {}
                 turn_actions = {}
                 turn_cards = {}
+                
                 for name in self.Players:
                     player = self.Players[name]
                     action, card = player.set_action()
-                    print(f"{player.get_name()} {action_list[action]} {card}")
+                    
+                    if action == 2:
+                        discard_pile.update({card:player.get_hand()[card]})
                     turn_actions[name] = action
                     turn_cards[name] = card
                     
@@ -323,6 +331,10 @@ class SevenWonders:
                     old_hands[name] = player.play_card(turn_actions[name], turn_cards[name])
                     player.give_trade()
 
+                    if turn == initial_hand_size - 2:
+                        discarded = list(old_hands[name].keys())[0]
+                        discard_pile.update({discarded:old_hands[name][discarded]})
+                    
                     if (age == 0 or age == 2):
                         right = player.get_neighbor("right")
                         if right.get_name() in old_hands:
@@ -337,6 +349,7 @@ class SevenWonders:
                             new_hand = left.get_hand()
                         
                     self.Players[name].set_hand(new_hand)
+                    self.Players[name].set_discard(discard_pile)
                 turn += 1
             self.resolve_conflicts(age)
         

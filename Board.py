@@ -1,7 +1,8 @@
 class Board:
-    def __init__(self,name,start,num_stages,costs,rewards,time):
+    def __init__(self,name,start,color,num_stages,costs,rewards,time):
         self.name = name.iloc[0]
         self.start = start
+        self.color = color
         self.num_stages = int(num_stages.iloc[0])
         self.costs = costs.to_string(index=False).split("-")
         self.rewards = self.set_rewards(rewards)
@@ -25,6 +26,9 @@ class Board:
     def get_start(self):
         return self.start.to_string(index=False)
     
+    def get_start_color(self):
+        return self.color.to_string(index=False)
+    
     def get_stage_cost(self,stage, view=False):
         if(view):
             return ', '.join(self.costs[stage].split(","))
@@ -39,7 +43,7 @@ class Board:
         return self.name
     
     def next_stage(self):
-        if self.stage < 2:
+        if self.stage < self.num_stages:
             self.stage += 1
     
     def set_rewards(selfm,rewards):

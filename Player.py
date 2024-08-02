@@ -1,5 +1,6 @@
 import random
 import Events as e
+import copy
 class Player:
     def __init__(self,name,board,ai=False):
         self.name=name
@@ -9,16 +10,22 @@ class Player:
         self.hand={}
         self.available_cards = {}
         self.unavailable = {}
+        self.card_names = []
+        self.discarded = {}
         
         self.stage = {"available":False, "trade":{}}
         
         self.resources={"wood":0,"stone":0,"brick":0,"ore":0,"glass":0,"silk":0,"paper":0,"coin":3, "any":0, "any_rare":0, "choice":{}}
         self.special_resources={"victory":0,"military":0,"cog":0,"compass":0,"tablet":0, "any_science":0, "tokens":{}}
-        self.colors = {"brown":0, "white":0, "yellow":0, "grenn":0, "red":0, "blue":0,"purple":0}
+        self.colors = {"brown":0, "white":0, "yellow":0, "green":0, "red":0, "blue":0,"purple":0}
+        self.rare_resource = ["glass","silk","paper"]
+        
         self.end_events = {}
-        self.add_resources([board.get_start()], is_card=False)
         self.build = ["free", "none"]
         self.build_view = {}
+        
+        self.add_resources([board.get_start()], is_card=False)
+        self.colors[board.get_start_color()] += 1
         
         self.trade_cards = {}
         self.left_neighbor = ""
@@ -35,6 +42,12 @@ class Player:
         self.left_coins = 0
         self.right_coins = 0
         self.hand = hand
+    
+    def set_discard(self,discard):
+        self.discarded = discard
+        
+    def set_available(self, available):
+        self.available_cards = available
         
     def set_left(self,player):
         self.left_neighbor = player
@@ -51,6 +64,8 @@ class Player:
             self.available(self.hand)
             if self.stage["available"]:
                 stage_available = "available"
+                if self.stage["trade"]:
+                    stage_available = "available through trade"
         
         if not self.is_ai:
             self.view_hand()
@@ -95,8 +110,8 @@ class Player:
         
         return action, card_name
         
-    def set_play_action(self, action):
-        action_list = {1:"play", 2:"discard", 3:"build wonder"}
+    def set_play_action(self, action, for_event=False):
+        action_list = {1:"play", 2:"discard", 3:"build wonder "}
         valid = False
         conf_action = ""
         card_name = ""
@@ -114,7 +129,7 @@ class Player:
                         else:
                             return False, card_name
                     elif card_name in self.unavailable and action == 1:
-                        print(f"Not enough resources to {action_list[action]} {card_name}")
+                        print(f"Not enough resources to {action_list[action]} {card_name}\n")
                     else:
                         conf_action = action_list[action] + " " + card_name
                         valid = True
@@ -122,15 +137,20 @@ class Player:
                 
             elif action == 3:
                 if self.stage["available"]:
+                    trade = True
                     if self.stage["trade"]:
-                        self.confirm_trade("stage")
-                    card_name = input(f"what card do you want to discard to build stage {self.board.get_stage()+1} of your wonder? ")
-                    conf_action = action_list[action] + "by discarding " + card_name
-                    valid = True
+                        trade = self.confirm_trade("stage")
+                    if trade:
+                        card_name = input(f"what card do you want to discard to build stage {self.board.get_stage()+1} of your wonder? ")
+                        conf_action = action_list[action] + "by discarding " + card_name
+                        valid = True
+                    else:
+                        return False, card_name
                 else:
                     print("Unable to build next wonder stage")
             if card_name not in self.hand:
-                print("invalid card")
+                print("invalid card\n")
+                valid = False
         
         confirmed = False
         while not confirmed:
@@ -139,7 +159,12 @@ class Player:
                 confirmed = True
                 print("confirmed")
             elif confirm.lower() == "n" or confirm.lower() == "no" or confirm == "0":
-                print("action canceled")
+                print("action canceled\n")
+                if self.is_trading_left or self.is_trading_right:
+                    self.is_trading_left = False
+                    self.is_trading_right = False
+                if for_event:
+                    self.set_play_action(action, for_event=True)
                 return confirmed, card_name
             else:
                 print("please respond with yes or no")
@@ -151,12 +176,14 @@ class Player:
         if action == 1:
             if card_name in self.available_cards or card_name in self.trade_cards:
                 self.add_resources(card)
+                self.card_names.append(card_name)
                 if "coin" in card.get_cost(): # only time when resources are taken
                     for cost in card.get_cost():
                         if cost == "coin":
                             self.resources["coin"] -= 1
         elif action == 2:
             self.add_resources(["coin","coin","coin"], is_card=False)
+            self.discarded[card_name] = copy.deepcopy(card)
         else:
             stage = self.board.get_stage()
             board_reward = self.board.get_stage_reward(stage)
@@ -164,7 +191,10 @@ class Player:
             self.board.next_stage()
             self.stage["available"] = False
             self.stage["trade"] = {}
-            
+        
+        action_list = {1:"played", 2:"discarded", 3:"built a stage of their wonder with"}
+        print(f"{self.name} {action_list[action]} {card_name}")
+        
         del self.hand[card_name]
         return self.hand
     
@@ -175,24 +205,27 @@ class Player:
             e(*params)
             
     def confirm_trade(self, card_name):
-        check = self.hand[card_name]
         left_neighbor = self.left_neighbor.get_name()
         right_neighbor = self.right_neighbor.get_name()
-        rare_resource = ["glass","silk","paper"]
+        
         needed_resources = {"wood":0,"stone":0,"brick":0,"ore":0,"glass":0,"silk":0,"paper":0}
-        left_check = self.trade_cards[card_name]["left"].copy()
-        right_check = self.trade_cards[card_name]["right"].copy()
+
         coin_check = self.resources["coin"]
         right_coins = 0
         left_coins = 0
         self.left_coins = 0
         self.right_coins = 0
         trade_resources = ""
+        left_check = ""
+        right_check = ""
         
         if card_name == "stage":
             trade_resources = self.stage["trade"]
         elif card_name in self.trade_cards:
             trade_resources = self.trade_cards[card_name]
+           
+        left_check = copy.deepcopy(trade_resources["left"])
+        right_check = copy.deepcopy(trade_resources["right"])
         
         for r in trade_resources:
             for left_cost in left_check:
@@ -206,9 +239,9 @@ class Player:
                 while right_check[right_cost] > 0 and right_cost != "market" and right_cost != "post":
                     right_check[right_cost] -= 1
                     needed_resources[right_cost] += 1
-                    
-        left_check = self.trade_cards[card_name]["left"].copy()
-        right_check = self.trade_cards[card_name]["right"].copy()
+        
+        left_check = copy.deepcopy(trade_resources["left"])
+        right_check = copy.deepcopy(trade_resources["right"])
         trade_partners = {left_neighbor:left_check, right_neighbor:right_check} 
         trade_partner = ""
         if not self.is_ai:
@@ -229,7 +262,7 @@ class Player:
                     
                     while not picked:
                         trade_partner = input(f"From whom do you want to trade one {r} from? {left_neighbor} or {right_neighbor}? (0 to cancel trade) ")
-                        if trade_partner == left_neighbor or right_neighbor:
+                        if trade_partner == left_neighbor or trade_partner == right_neighbor:
                             picked = True
                         elif trade_partner == "0": #cancel trade
                             print("trade canceled")
@@ -242,7 +275,7 @@ class Player:
                     
                     
                     trade_cost = trade_partners[trade_partner]["post"]
-                    if r in rare_resource:
+                    if r in self.rare_resource:
                         trade_cost = trade_partners[trade_partner]["market"]
                     print(f"It costs {trade_cost} coins to trade from {trade_partner}")
 
@@ -270,12 +303,12 @@ class Player:
             for r in needed_resources:    
                 while needed_resources[r] > 0:
                     if check[r] == 0:
-                        trade_partner = self.get_trade_partner(left_check, right_check, r, True if r in rare_resource else False)
+                        trade_partner = self.get_trade_partner(left_check, right_check, r, True if r in self.rare_resource else False)
                         check = self.trade_cards[card_name][trade_partner].copy()
                     else:
                         needed_resources[r] -= 1
                         trade_cost = self.trade_cards[card_name][trade_partner]["post"]
-                        if r in rare_resource:
+                        if r in self.rare_resource:
                             trade_cost = self.trade_cards[card_name][trade_partner]["market"]
                             
                         if trade_partner == "left":
@@ -289,7 +322,10 @@ class Player:
         while not confirm_trade:
             confirm = "yes"
             if not self.is_ai:
-                confirm = input(f"It will cost {left_coins + right_coins} coins to play {card_name}. 0 to cancel, anything else to confirm ")
+                if card_name == "stage":
+                    confirm = input(f"It will cost {left_coins + right_coins} coins to build next stage of your wonder. 0 to cancel, anything else to confirm ")
+                else:
+                    confirm = input(f"It will cost {left_coins + right_coins} coins to play {card_name}. 0 to cancel, anything else to confirm ")
             if confirm == "0": #cancel trade
                 print("trade canceled")
                 return False
@@ -350,24 +386,34 @@ class Player:
                     print(f"{r}: {self.resources[r]}")
                 elif isinstance(self.resources[r],int) and self.resources[r] > 0:
                     print(f"{r}: {self.resources[r]}")
-            print("")
-            print(f"{self.name}'s special resources:")
+            print()
             empty = True
+            special_title = ""
             for r in self.special_resources:
                 if not isinstance(self.special_resources[r],int) and len(self.special_resources[r]) != 0:
-                    print(f"{r}: {self.special_resources[r]}")
                     empty = False
                 elif isinstance(self.special_resources[r],int) and self.special_resources[r] > 0:
-                    print(f"{r}: {self.special_resources[r]}")
                     empty = False
-            if empty:
-                print("none")
+                if not empty:
+                    if not special_title:
+                        special_title = "Special resources: "
+                        print(special_title)
+                    if not isinstance(self.special_resources[r],int) and len(self.special_resources[r]) != 0:
+                        print(f"{r}: {self.special_resources[r]}")
+                    elif isinstance(self.special_resources[r],int) and self.special_resources[r] > 0:
+                        print(f"{r}: {self.special_resources[r]}")
+                        
             
             if self.build_view:
                 print("\nBuild chains: ")
                 for build in self.build_view:
                     print(build + " -> ", end="")
                     print(', '.join(self.build_view[build]))
+            print()
+            print("Card colors: ")
+            for color in self.colors:
+                if self.colors[color] > 0:
+                    print(f"{color}: {self.colors[color]}")
             print()
                 
         if special:
@@ -382,6 +428,9 @@ class Player:
     
     def get_board(self):
         return self.board
+    
+    def get_discard(self):
+        return self.discarded
 
     def is_ai(self):
         return self.is_ai
@@ -402,7 +451,6 @@ class Player:
     def add_resources(self, resource, is_card=True, is_token=False):
         
         products = resource
-        is_event = False
         if is_card and not is_token:
             products = resource.get_product()
             if resource.get_build()[0] != "none":
@@ -413,13 +461,13 @@ class Player:
                 self.colors[color] += 1
             else:
                 self.colors[color] = 1
-            event = ""
-            event_name = ""
-            if products[0][:5] == "EVENT":
-                is_event = True
-                event_name = products[0][6:]
-                event = e.event_handler(event_name)
-                event(self) #triggers/sets event
+        
+        is_event = False
+        if products[0][:5] == "EVENT":
+            is_event = True
+            event_name = products[0][6:]
+            event = e.event_handler(event_name)
+            event(self) #triggers/sets event
         
         if not is_event:
             for r in products:
@@ -440,45 +488,48 @@ class Player:
                     self.special_resources[r] = "Built"
     
     def add_end_event(self, event_name, params, event):
+        if event_name in self.end_events and not event_name[-1].isnumeric():
+            event_name += "1"
+        elif event_name in self.end_events and event_name[-1].isnumeric() and int(event_name[-1]) != 1:
+            event_name[-1] = str(int(event_name[-1]) + 1)
         self.end_events[event_name] = [params,event]
         
     def available(self,hand):
-        rare_resource = ["glass","silk","paper"]
         for card in hand:
-            check = self.resources.copy()
-            check["choice"] = self.resources["choice"].copy()
+            check = copy.deepcopy(self.resources)
             available = True
             trade = {}
             card_cost = hand[card].get_cost().copy()
-            if card not in self.build and "free" not in card_cost:
+            
+            if card in self.card_names:
+                available = False
+            elif card not in self.build and "free" not in card_cost and not ("olympia_special_a" in self.end_events and self.colors[hand[card].get_color()] == 0):
                 for i,cost in enumerate(card_cost):
                     
                     if check[cost] > 0:
                         check[cost] -= 1
                         card_cost[i] = ""
-                    elif cost in rare_resource and check["any_rare"] > 0:
-                        check["any_rare"] -=1
-                        card_cost[i] = ""
-                    elif check["any"] > 0:
-                        check["any"] -=1
-                        card_cost[i] = ""
                     elif cost in check["choice"].keys():
                         card_cost[i] = ""
                         del check["choice"][cost]
-                        
                     elif cost in check["choice"].values():
                         position = list(check["choice"].values()).index(cost)
                         key_list = list(check["choice"].keys())
                         key = key_list[position]
                         card_cost[i] = ""
                         del check["choice"][key]
+                    elif cost in self.rare_resource and check["any_rare"] > 0:
+                        check["any_rare"] -=1
+                        card_cost[i] = ""
+                    elif check["any"] > 0:
+                        check["any"] -=1
+                        card_cost[i] = ""
                     else:
                         available = False
-                        break
             
             if available:
                 self.available_cards[card] = hand[card]
-            else:
+            elif card not in self.card_names:
                 card_cost = list(filter(None, card_cost))
                 can_trade, trade = self.trade_available(card_cost)
                 if can_trade:
@@ -486,16 +537,13 @@ class Player:
                 else:
                     self.unavailable[card] = hand[card]
         
-        if not self.stage["available"]:
-            self.stage_available()
+        self.stage_available()
         
         return self.available_cards, self.trade_cards, self.unavailable
     
     def trade_available(self, check):
-        left_check = self.left_neighbor.get_resources().copy()
-        right_check = self.right_neighbor.get_resources().copy()
-        left_check["choice"] = self.left_neighbor.get_resources()["choice"].copy()
-        right_check["choice"] = self.right_neighbor.get_resources()["choice"].copy()
+        left_check = copy.deepcopy(self.left_neighbor.get_resources())
+        right_check = copy.deepcopy(self.right_neighbor.get_resources())
         
         if len(left_check) == 0 or not isinstance(left_check, dict):
             print("ERROR")
@@ -503,7 +551,7 @@ class Player:
         if len(right_check) == 0 or not isinstance(right_check, dict):
             print("ERROR")
             return
-        rare_resource = ["glass","silk","paper"]
+        
         left_trade = {"market": 2,"post":2, "wood":0,"stone":0,"brick":0,"ore":0,"glass":0,"silk":0,"paper":0}
         right_trade = {"market": 2,"post":2, "wood":0,"stone":0,"brick":0,"ore":0,"glass":0,"silk":0,"paper":0}
         left_cost = 0
@@ -521,23 +569,32 @@ class Player:
         
         for cost in check:
             
-            #can only trade for basic or rare resources and no coin
+            #can only trade for basic or rare resources (no coin)
             if cost not in left_trade: 
                 return False, {}
+            
+            in_left = False
+            in_right = False
             
             if left_check[cost] > 0 and right_check[cost] > 0:
                 left_check[cost] -= 1
                 left_trade[cost] += 1
                 right_trade[cost] += 1
+                in_left = True
+                in_right = True
             elif left_check[cost] > 0:
                 left_check[cost] -= 1
                 left_trade[cost] += 1
+                in_left = True
             elif right_check[cost] > 0:
                 right_check[cost] -= 1
                 right_trade[cost] += 1
+                in_right = True
             elif cost in left_check["choice"].keys() and cost in right_check["choice"].keys():
                 left_trade[cost] += 1
                 right_trade[cost] += 1
+                in_left = True
+                in_right = True
                 del left_check["choice"][cost]
             elif cost in left_check["choice"].values() and cost in right_check["choice"].values():
                 position = list(left_check["choice"].values()).index(cost)
@@ -545,29 +602,35 @@ class Player:
                 key = key_list[position]
                 left_trade[cost] += 1
                 right_trade[cost] += 1
+                in_left = True
+                in_right = True
                 del left_check["choice"][key]
             elif cost in left_check["choice"].keys():
                 left_trade[cost] += 1
+                in_left = True
                 del left_check["choice"][cost]
             elif cost in left_check["choice"].values():
                 position = list(left_check["choice"].values()).index(cost)
                 key_list = list(left_check["choice"].keys())
                 key = key_list[position]
                 left_trade[cost] += 1
+                in_left = True
                 del left_check["choice"][key]
             elif cost in right_check["choice"].values():
                 position = list(right_check["choice"].values()).index(cost)
                 key_list = list(right_check["choice"].keys())
                 key = key_list[position]
                 right_trade[cost] += 1
+                in_right = True
                 del right_check["choice"][key]
             elif cost in right_check["choice"].keys():
                 right_trade[cost] += 1
+                in_right = True
                 del right_check["choice"][cost]
             else:
                 return False, {}
                 
-            if cost in rare_resource:
+            if cost in self.rare_resource:
                 left_cost = left_trade["market"]
                 right_cost = right_trade["market"]
             else:
@@ -575,32 +638,51 @@ class Player:
                 right_cost = right_trade["post"]
             
             #gets minimal trade cost
-            if left_cost < right_cost:
+            if left_cost < right_cost and in_left:
                 trade_cost += left_cost
-            else:
+            elif right_cost < left_cost and in_right:
                 trade_cost += right_cost
-            
+            else:
+                trade_cost += left_cost
+                
             if trade_cost > self.resources["coin"]:
                 return False, {}
             
         return True, {'left':left_trade, 'right':right_trade}
     
     def stage_available(self):
-        check = self.resources.copy()
+        check = copy.deepcopy(self.resources)
         available = True
         trade = {}
         stage_cost = self.board.get_stage_cost(self.board.get_stage()) 
-        for i, cost in enumerate(stage_cost):
+        for i, cost in enumerate(stage_cost):        
             if check[cost] > 0:
                 check[cost] -= 1
                 stage_cost[i] = ""
+            elif cost in self.rare_resource and check["any_rare"] > 0:
+                check["any_rare"] -=1
+                stage_cost[i] = ""
+            elif check["any"] > 0:
+                check["any"] -=1
+                stage_cost[i] = ""
+            elif cost in check["choice"].keys():
+                stage_cost[i] = ""
+                del check["choice"][cost]
+            elif cost in check["choice"].values():
+                position = list(check["choice"].values()).index(cost)
+                key_list = list(check["choice"].keys())
+                key = key_list[position]
+                stage_cost[i] = ""
+                del check["choice"][key]
             else:
-                available = False 
+                available = False
                 break
         if available:
             self.stage["available"] = True
+            self.stage["trade"] = {}
         else:
             stage_cost = list(filter(None,stage_cost))
+            
             can_trade, trade = self.trade_available(stage_cost)
             self.stage["available"] = can_trade
             self.stage["trade"] = trade
@@ -623,5 +705,8 @@ class Player:
                 available = "Available"
             elif name in self.trade_cards:
                 available = "Available through trade"
-            print(f"{card.get_name(view)}:\n\tCost: {card.get_cost(view)} ({available})\n\tProduces: {card.get_product(view)}\n\tChain: {card.get_build(view)}")
+            chain = ""
+            if card.get_build()[0] != "none":
+                chain = f"\n\tChain: {card.get_build(view)}"
+            print(f"{card.get_name(view)}:\n\tCost: {card.get_cost(view)} ({available})\n\tProduces: {card.get_product(view)}{chain}\n\tColor: {card.get_color()}")
         

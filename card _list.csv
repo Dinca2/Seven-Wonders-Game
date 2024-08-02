@@ -48,7 +48,7 @@ age,name,cost,build,product,color,player_count
 3,senate,"wood,wood,ore,stone",none,"victory,victory,victory,victory,victory,victory",blue,3
 3,haven,"ore,wood,silk",none,"EVENT brown_victory",yellow,3
 3,lighthouse,"stone,glass",none,"EVENT yellow_victory",yellow,3
-3,arena,"stone,stone,ore",none,"EVENT areana",yellow,3
+3,arena,"stone,stone,ore",none,"EVENT arena",yellow,3
 3,fortifications,"ore,ore,ore,stone",none,"military,military,military",red,3
 3,arsenal,"ore,wood,wood,silk",none,"military,military,military",red,3
 3,siege workshop,"wood,brick,brick,brick",none,"military,military,military",red,3
@@ -59,9 +59,9 @@ age,name,cost,build,product,color,player_count
 3,study,"wood,paper,silk",none,cog,green,3
 3,workers guild,"ore,ore,brick,stone,wood",none,"EVENT brown_neighbor_victory",purple,3
 3,craftmens guild,"ore,ore,stone,stone",none,"EVENT white_neighbor_victory",purple,3
-3,traders guild,"silk,paper",none,"EVENT yellow_neightbor_victory",purple,3
+3,traders guild,"silk,paper",none,"EVENT yellow_neighbor_victory",purple,3
 3,philosophers guild,"brick,brick,brick,silk,paper",none,"EVENT green_neighbor_victory",purple,3
-3,spy guild,"brick,brick,brick,glass",none,"EVENT red_neighboor_victory",purple,3
+3,spy guild,"brick,brick,brick,glass",none,"EVENT red_neighbor_victory",purple,3
 3,strategy guild,"ore,ore,stone,silk",none,"EVENT defeat_neighbor",purple,3
 3,shipowners guild,"wood,wood,wood,paper,glass",none,"EVENT ship_guild",purple,3
 3,scientists guild,"ore,ore,wood,wood,paper",none,"EVENT science_guild",purple,3

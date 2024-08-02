@@ -38,7 +38,19 @@ class Card:
     
     def get_product(self, view=False):
         if(view):
-            return ', '.join(self.product)
+            products = {}
+            for p in self.product:
+                if p in products:
+                    products[p] += 1
+                else:
+                    products[p] = 1
+            product_view = ""
+            for i, p in enumerate(list(products.keys())):
+                if i == len(products) - 1:
+                    product_view += (str(products[p]) + " " + p)
+                else:
+                    product_view += (str(products[p]) + " " + p  + ", ")
+            return product_view
         return self.product
     
     def get_color(self, view=False):
