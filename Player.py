@@ -120,7 +120,7 @@ class Player:
                 print("There are no available cards to play")
                 return False, card_name
             if action == 1  or action == 2:
-                card_name = input(f"what card do you want to {action_list[action]}? ")
+                card_name = input(f"what card do you want to {action_list[action]}? (0 to cancel) ")
                 if card_name in self.hand:
                     if card_name in self.trade_cards and action == 1:
                         if self.confirm_trade(card_name):
@@ -133,6 +133,9 @@ class Player:
                     else:
                         conf_action = action_list[action] + " " + card_name
                         valid = True
+                elif card_name == "0":
+                    print("action canceled\n")
+                    return False, card_name
                         
                 
             elif action == 3:
@@ -148,6 +151,7 @@ class Player:
                         return False, card_name
                 else:
                     print("Unable to build next wonder stage")
+                    return False, card_name
             if card_name not in self.hand:
                 print("invalid card\n")
                 valid = False

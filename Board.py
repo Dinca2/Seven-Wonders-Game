@@ -32,11 +32,15 @@ class Board:
     def get_stage_cost(self,stage, view=False):
         if(view):
             return ', '.join(self.costs[stage].split(","))
+        if self.stage == self.num_stages:
+            return []
         return self.costs[stage].split(",")
     
     def get_stage_reward(self,stage, view=False):
         if(view):
             return ', '.join(self.rewards[stage].split(","))
+        if self.stage == self.num_stages:
+            return []
         return self.rewards[stage].split(",")
     
     def get_name(self):

@@ -229,6 +229,8 @@ def play_discard(player):
     
     player.play_card(1,card_name)
     player.set_hand(old_hand)
+    player.self.is_trading_left = False
+    player.is_trading_right = False
     
 def olympia_special_a(player, end=False):
     if not end:
