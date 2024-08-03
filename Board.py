@@ -19,6 +19,22 @@ class Board:
                 built = " (built)"
             print(f"Stage {x}{built}: \n\tCost: {self.get_stage_cost(x - 1, view=True)}\n\tReward: {self.get_stage_reward(x - 1, view=True)}")
                 
+    def list_view(self, list_to_view):
+        list_dict = {}
+        for x in list_to_view:
+            if x in list_dict:
+                list_dict[x] += 1
+            else:
+                list_dict[x] = 1
+        list_view = ""
+        for i, x in enumerate(list(list_dict.keys())):
+            if x[:5] == "EVENT":
+                list_view = x
+            elif i == len(list_dict) - 1:
+                list_view += (str(list_dict[x]) + " " + x)
+            else:
+                list_view += (str(list_dict[x]) + " " + x  + ", ")
+        return list_view
         
     def get_stage(self,view=False):
         return self.stage
@@ -31,14 +47,14 @@ class Board:
     
     def get_stage_cost(self,stage, view=False):
         if(view):
-            return ', '.join(self.costs[stage].split(","))
+            return self.list_view(self.costs[stage].split(","))
         if self.stage == self.num_stages:
             return []
         return self.costs[stage].split(",")
     
     def get_stage_reward(self,stage, view=False):
         if(view):
-            return ', '.join(self.rewards[stage].split(","))
+            return self.list_view(self.rewards[stage].split(","))
         if self.stage == self.num_stages:
             return []
         return self.rewards[stage].split(",")
@@ -50,7 +66,7 @@ class Board:
         if self.stage < self.num_stages:
             self.stage += 1
     
-    def set_rewards(selfm,rewards):
+    def set_rewards(self,rewards):
         rewards = rewards.to_string(index=False).split("-")
 
         for i,r in enumerate(rewards):

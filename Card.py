@@ -28,7 +28,7 @@ class Card:
     
     def get_cost(self, view=False):
         if(view):
-            return ', '.join(self.cost)
+            return self.list_view(self.cost)
         return self.cost
     
     def get_build(self, view=False):
@@ -38,20 +38,25 @@ class Card:
     
     def get_product(self, view=False):
         if(view):
-            products = {}
-            for p in self.product:
-                if p in products:
-                    products[p] += 1
-                else:
-                    products[p] = 1
-            product_view = ""
-            for i, p in enumerate(list(products.keys())):
-                if i == len(products) - 1:
-                    product_view += (str(products[p]) + " " + p)
-                else:
-                    product_view += (str(products[p]) + " " + p  + ", ")
-            return product_view
+            return self.list_view(self.product)
         return self.product
     
     def get_color(self, view=False):
         return self.color
+
+    def list_view(self, list_to_view):
+        list_dict = {}
+        for x in list_to_view:
+            if x in list_dict:
+                list_dict[x] += 1
+            else:
+                list_dict[x] = 1
+        list_view = ""
+        for i, x in enumerate(list(list_dict.keys())):
+            if x == "free" or x[:5] == "EVENT":
+                list_view = x
+            elif i == len(list_dict) - 1:
+                list_view += (str(list_dict[x]) + " " + x)
+            else:
+                list_view += (str(list_dict[x]) + " " + x  + ", ")
+        return list_view

@@ -43,12 +43,16 @@ def get_num_token(player, token, neighbors=["left", "right"], only_neighbors = F
     num_token = 0
     if neighbors:
         for neighbor in neighbors:
-            num_token += player.get_neighbor(neighbor).get_resources()["tokens"][token]
+            tokens = player.get_neighbor(neighbor).get_resources(special=True)["tokens"]
+            if token in tokens:
+                num_token += player.get_neighbor(neighbor).get_resources(special=True)["tokens"][token]
     
     if only_neighbors:
         return num_token
     
-    num_token += player.get_resources()["tokens"][token]
+    tokens = player.get_resources(special=True)["tokens"]
+    if token in tokens:
+        num_token += player.get_resources(special=True)["tokens"][token]
     return num_token
     
 def brown_coin(player):
@@ -214,6 +218,11 @@ def wonder_built(player, end=False):
         
 def play_discard(player):
     discarded_cards = player.get_discard()
+    if player.is_trading_left or player.is_trading_right:
+        player.give_trade()
+        player.is_trading_left = False
+        player.is_trading_right = False
+
     if not discarded_cards:
         print("unfortuently, there are no cards in the discard pile")
         return
@@ -223,16 +232,17 @@ def play_discard(player):
     confirmed = False
     card_name = ""
     print(f"{player.get_name()} please select a card to play from the discard pile.")
-    while not confirmed:
-        player.view_hand()
-        confirmed, card_name = player.set_play_action(1)
+    if player.get_is_ai():
+        action, card_name = player.set_action()
+    else:
+        while not confirmed:    
+            player.view_hand()
+            confirmed, card_name = player.set_play_action(1)
     
     player.play_card(1,card_name)
     player.set_hand(old_hand)
-    player.self.is_trading_left = False
-    player.is_trading_right = False
     
 def olympia_special_a(player, end=False):
     if not end:
         player.add_end_event("olympia_special_a",(player, True),olympia_special_a)
-        print(f"olympia special_________{player.end_events}")
+        

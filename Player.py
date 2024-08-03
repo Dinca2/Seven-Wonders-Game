@@ -436,7 +436,7 @@ class Player:
     def get_discard(self):
         return self.discarded
 
-    def is_ai(self):
+    def get_is_ai(self):
         return self.is_ai
     
     def give_trade(self):
@@ -467,7 +467,7 @@ class Player:
                 self.colors[color] = 1
         
         is_event = False
-        if products[0][:5] == "EVENT":
+        if len(products) > 0 and products[0][:5] == "EVENT":
             is_event = True
             event_name = products[0][6:]
             event = e.event_handler(event_name)
