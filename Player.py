@@ -2,10 +2,9 @@ import random
 import Events as e
 import copy
 class Player:
-    def __init__(self,name,board,ai=False):
+    def __init__(self,name,board):
         self.name=name
         self.board=board
-        self.is_ai=ai
         
         self.hand={}
         self.available_cards = {}
@@ -58,56 +57,40 @@ class Player:
     def set_action(self):
         card_name = ""
         action = 0
-        stage_available = "not available"
-        
+
         if not self.available_cards:
             self.available(self.hand)
-            if self.stage["available"]:
-                stage_available = "available"
-                if self.stage["trade"]:
-                    stage_available = "available through trade"
-        
-        if not self.is_ai:
-            self.view_hand()
-            confirmed = False
-            while not confirmed:
-                print(f"""Select Action:\n1) play (card)\n2) discard (card)\n3) build wonder (card) ({stage_available})
-                \n4) view hand\n5) view board\n6) view resources
-                \n7) view {self.left_neighbor.get_name()}'s board (left)\n8) view {self.right_neighbor.get_name()}'s board (right)""")
-                action = input()
-                if not action.isnumeric() or int(action) > 8 or int(action) < 1:
-                    print("please select action with 1, 2, 3, 4, 5, 6, 7 or 8")
-                else:
-                    action = int(action)
-                    if action < 4:
-                        confirmed, card_name = self.set_play_action(action)
-                    elif action == 4:
-                        self.view_hand()
-                    elif action == 5:
-                        self.board.view()
-                    elif action == 6:
-                        self.get_resources(view=True)
-                    elif action == 7:
-                        self.left_neighbor.board.view()
-                        self.left_neighbor.get_resources(view=True)
-                    elif action == 8:
-                        self.right_neighbor.board.view()
-                        self.right_neighbor.get_resources(view=True)
-
-        else:
-            if self.stage["available"] and len(self.hand) < 3:
-                card_name = random.choice(list(self.hand))
-                action = 3
-            elif self.available_cards:
-                card_name = random.choice(list(self.available_cards))
-                action = 1 #play
-            elif self.trade_cards:
-                card_name = random.choice(list(self.trade_cards))
-                action = 1 #trade
+        if self.stage["available"]:
+            stage_available = "available"
+            if self.stage["trade"]:
+                stage_available = "available through trade"
+    
+        self.view_hand()
+        confirmed = False
+        while not confirmed:
+            print(f"""Select Action:\n1) play (card)\n2) discard (card)\n3) build wonder (card) ({stage_available})
+            \n4) view hand\n5) view board\n6) view resources
+            \n7) view {self.left_neighbor.get_name()}'s board (left)\n8) view {self.right_neighbor.get_name()}'s board (right)""")
+            action = input()
+            if not action.isnumeric() or int(action) > 8 or int(action) < 1:
+                print("please select action with 1, 2, 3, 4, 5, 6, 7 or 8")
             else:
-                card_name = random.choice(list(self.unavailable))
-                action = 2
-        
+                action = int(action)
+                if action < 4:
+                    confirmed, card_name = self.set_play_action(action)
+                elif action == 4:
+                    self.view_hand()
+                elif action == 5:
+                    self.board.view()
+                elif action == 6:
+                    self.get_resources(view=True)
+                elif action == 7:
+                    self.left_neighbor.board.view()
+                    self.left_neighbor.get_resources(view=True)
+                elif action == 8:
+                    self.right_neighbor.board.view()
+                    self.right_neighbor.get_resources(view=True)
+    
         return action, card_name
         
     def set_play_action(self, action, for_event=False):
@@ -248,88 +231,66 @@ class Player:
         right_check = copy.deepcopy(trade_resources["right"])
         trade_partners = {left_neighbor:left_check, right_neighbor:right_check} 
         trade_partner = ""
-        if not self.is_ai:
-            for r in needed_resources:
-                while needed_resources[r] > 0:
-                    print(f"You need to trade for {needed_resources[r]} more {r}")
-                    picked = False
-                    if left_check[r] > 0 and right_check[r] > 0:
-                        print(f"{left_neighbor} has {left_check[r]} {r} and {right_neighbor} has {right_check[r]} {r}.")
-                    elif left_check[r] > 0:
-                        print(f"Only {left_neighbor} has {r} ({left_check[r]}).")
-                        trade_partner = left_neighbor
+        
+        for r in needed_resources:
+            while needed_resources[r] > 0:
+                print(f"You need to trade for {needed_resources[r]} more {r}")
+                picked = False
+                if left_check[r] > 0 and right_check[r] > 0:
+                    print(f"{left_neighbor} has {left_check[r]} {r} and {right_neighbor} has {right_check[r]} {r}.")
+                elif left_check[r] > 0:
+                    print(f"Only {left_neighbor} has {r} ({left_check[r]}).")
+                    trade_partner = left_neighbor
+                    picked = True
+                else:
+                    print(f"Only {right_neighbor} has {r} ({right_check[r]}).")
+                    trade_partner = right_neighbor
+                    picked = True
+                
+                while not picked:
+                    trade_partner = input(f"From whom do you want to trade one {r} from? {left_neighbor} or {right_neighbor}? (0 to cancel trade) ")
+                    if trade_partner == left_neighbor or trade_partner == right_neighbor:
                         picked = True
-                    else:
-                        print(f"Only {right_neighbor} has {r} ({right_check[r]}).")
-                        trade_partner = right_neighbor
+                    elif trade_partner == "0": #cancel trade
+                        print("trade canceled")
+                        return False
+                    elif trade_partner != left_neighbor and trade_partner != right_neighbor:
+                        print(f"Can't recongnize {trade_partner}")
+                    elif trade_partners[trade_partner][r] == 0:
+                        print(f"{trade_partner} does not have enough {r} to trade. Pick other neighbor or cancel trade to reset")
+                    
+                
+                
+                trade_cost = trade_partners[trade_partner]["post"]
+                if r in self.rare_resource:
+                    trade_cost = trade_partners[trade_partner]["market"]
+                print(f"It costs {trade_cost} coins to trade from {trade_partner}")
+
+                if trade_cost > coin_check:
+                    print(f"Not enough coins to trade. Pick other neighbor or cancel trade to reset")
+                else:
+                    confirm = input(f"Confirm? type 1 to confirm. (You have {coin_check} coins) ")
+                    if confirm == "1" and trade_cost <= self.resources["coin"]:
                         picked = True
-                    
-                    while not picked:
-                        trade_partner = input(f"From whom do you want to trade one {r} from? {left_neighbor} or {right_neighbor}? (0 to cancel trade) ")
-                        if trade_partner == left_neighbor or trade_partner == right_neighbor:
-                            picked = True
-                        elif trade_partner == "0": #cancel trade
-                            print("trade canceled")
-                            return False
-                        elif trade_partner != left_neighbor and trade_partner != right_neighbor:
-                            print(f"Can't recongnize {trade_partner}")
-                        elif trade_partners[trade_partner][r] == 0:
-                            print(f"{trade_partner} does not have enough {r} to trade. Pick other neighbor or cancel trade to reset")
-                        
-                    
-                    
-                    trade_cost = trade_partners[trade_partner]["post"]
-                    if r in self.rare_resource:
-                        trade_cost = trade_partners[trade_partner]["market"]
-                    print(f"It costs {trade_cost} coins to trade from {trade_partner}")
-
-                    if trade_cost > coin_check:
-                        print(f"Not enough coins to trade. Pick other neighbor or cancel trade to reset")
-                    else:
-                        confirm = input(f"Confirm? type 1 to confirm. (You have {coin_check} coins) ")
-                        if confirm == "1" and trade_cost <= self.resources["coin"]:
-                            picked = True
-                            coin_check -= trade_cost
-                            needed_resources[r] -= 1
-                            if trade_partner == left_neighbor:
-                                left_check[r] -= 1
-                                left_coins += trade_cost
-                            else:
-                                right_check[r] -= 1
-                                right_coins += trade_cost
-                        else:
-                            print(f"trade unconfirmed")
-                            return False
-
-        else:
-            trade_partner = self.get_trade_partner(left_check, right_check, card_name)
-            check = self.trade_cards[card_name][trade_partner].copy()
-            for r in needed_resources:    
-                while needed_resources[r] > 0:
-                    if check[r] == 0:
-                        trade_partner = self.get_trade_partner(left_check, right_check, r, True if r in self.rare_resource else False)
-                        check = self.trade_cards[card_name][trade_partner].copy()
-                    else:
+                        coin_check -= trade_cost
                         needed_resources[r] -= 1
-                        trade_cost = self.trade_cards[card_name][trade_partner]["post"]
-                        if r in self.rare_resource:
-                            trade_cost = self.trade_cards[card_name][trade_partner]["market"]
-                            
-                        if trade_partner == "left":
+                        if trade_partner == left_neighbor:
                             left_check[r] -= 1
                             left_coins += trade_cost
                         else:
                             right_check[r] -= 1
                             right_coins += trade_cost
+                    else:
+                        print(f"trade unconfirmed")
+                        return False
                     
         confirm_trade = False
         while not confirm_trade:
             confirm = "yes"
-            if not self.is_ai:
-                if card_name == "stage":
-                    confirm = input(f"It will cost {left_coins + right_coins} coins to build next stage of your wonder. 0 to cancel, anything else to confirm ")
-                else:
-                    confirm = input(f"It will cost {left_coins + right_coins} coins to play {card_name}. 0 to cancel, anything else to confirm ")
+            if card_name == "stage":
+                confirm = input(f"It will cost {left_coins + right_coins} coins to build next stage of your wonder. 0 to cancel, anything else to confirm ")
+            else:
+                confirm = input(f"It will cost {left_coins + right_coins} coins to play {card_name}. 0 to cancel, anything else to confirm ")
             if confirm == "0": #cancel trade
                 print("trade canceled")
                 return False
@@ -343,35 +304,6 @@ class Player:
                 confirm_trade = True
         
         return True
-    
-    def get_trade_partner(self, left, right, check="", is_rare=False):
-        left_none = True
-        right_none = True
-        
-        if check:
-            if left[check] > 0:
-                left_none = False
-            if right[check] > 0:
-                right_none = False
-        else:
-            for r in left:
-                if left[r] != 0:
-                    left_none = False
-        
-        
-        trade_partner = "left"
-        if is_rare:
-            if self.trade_cards[check]["left"]["market"] == self.trade_cards[check]["right"]["market"] and (not left_none and not right_none):
-                trade_partner = random.choice(["left", "right"])
-            elif self.trade_cards[check]["left"]["market"] > self.trade_cards[check]["right"]["market"] or left_none:
-                trade_partner = "right"
-        else:
-            if self.trade_cards[check]["left"]["post"] == self.trade_cards[check]["right"]["post"] and (not left_none and not right_none):
-                trade_partner = random.choice(["left", "right"])
-            elif self.trade_cards[check]["left"]["post"] > self.trade_cards[check]["right"]["post"] or left_none:
-                trade_partner = "right"
-        
-        return trade_partner
         
     def get_neighbor(self, neighbor = "left"):
         if neighbor == "left":
@@ -435,9 +367,6 @@ class Player:
     
     def get_discard(self):
         return self.discarded
-
-    def get_is_ai(self):
-        return self.is_ai
     
     def give_trade(self):
         if self.is_trading_left:
@@ -692,10 +621,7 @@ class Player:
             self.stage["trade"] = trade
     
     def view(self):
-        human = "Human"
-        if self.is_ai:
-            human = "AI"
-        print(f"({human})")
+        print(f"(Human)")
         print(f"Name: {self.get_name()}")
         print(f"Board: {self.board.get_name()}")
         

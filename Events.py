@@ -232,8 +232,8 @@ def play_discard(player):
     confirmed = False
     card_name = ""
     print(f"{player.get_name()} please select a card to play from the discard pile.")
-    if player.get_is_ai():
-        action, card_name = player.set_action()
+    if player.get_name()[:2] == "ai":
+        x, card_name = player.set_action()
     else:
         while not confirmed:    
             player.view_hand()

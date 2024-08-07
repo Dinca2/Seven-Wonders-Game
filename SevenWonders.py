@@ -4,6 +4,7 @@
 from Card import Card
 from Board import Board
 from Player import Player
+from AI import AI_Player
 import pandas as pd
 import random
 class SevenWonders:
@@ -98,7 +99,7 @@ class SevenWonders:
                 board_list.drop(board_list[board_list["name"] == board_name].index, inplace=True)
             
             board = Board(board_frame["name"],board_frame["start"],board_frame["color"],board_frame["num_stages"],board_frame["costs"],board_frame["rewards"],board_frame["time"])
-            self.Players[name] = Player(name, board, ai=False)
+            self.Players[name] = Player(name, board)
         
         num_ai = self.num_players-self.num_human
         for ai in range(self.num_players-num_ai, self.num_players):
@@ -106,7 +107,7 @@ class SevenWonders:
             board_list.drop(board_frame.index, inplace=True)
             board = Board(board_frame["name"],board_frame["start"],board_frame["color"],board_frame["num_stages"],board_frame["costs"],board_frame["rewards"],board_frame["time"])
             name = player_names[ai]
-            self.Players[name] = Player(name, board, ai=True)
+            self.Players[name] = AI_Player(name, board)
     
     def set_neighbors(self, player_names):
         n_edges = 0
@@ -118,7 +119,7 @@ class SevenWonders:
             right_set = False
             
             while not left_set and n_edges < self.num_players:
-                if self.Players[name].is_ai or self.fast_setup:
+                if isinstance(self.Players[name], AI_Player) or self.fast_setup:
                     left = player_names[player + 1]
                     left_set = True
                 else:
@@ -142,7 +143,7 @@ class SevenWonders:
             
             while not right_set and n_edges < self.num_players:
                 
-                if self.Players[name].is_ai or self.fast_setup:
+                if isinstance(self.Players[name], AI_Player) or self.fast_setup:
                     right = player_names[player - 1]
                     if player == 0:
                         right = player_names[len(player_names) - 1]
@@ -280,6 +281,8 @@ class SevenWonders:
             #guilds = 0
             science = self.add_science_vp(player)
             print(f"science: {science}")
+            other = player.get_resources(special=True)["victory"]
+            print(f"other: {other}")
             total = military + treasury + science + player.get_resources(special=True)["victory"]
             print(f"total: {total}")
             ranking[name] = total
@@ -357,9 +360,11 @@ class SevenWonders:
         ranking = self.tally_victory()
         for i,rank in enumerate(ranking):
             if i == 0:
-                print(f"1st place: {rank[0]}")
+                print(f"1st place: {rank[0]} with {rank[1]} victory points")
             elif i == 1:
-                print(f"2nd place: {rank[0]}")
+                print(f"2nd place: {rank[0]} with {rank[1]} victory points")
+            elif i == 2:
+                print(f"3rd place: {rank[0]} with {rank[1]} victory points")
             else:
-                print(f"{i - 1}th place: {rank[0]}")
+                print(f"{i + 1}th place: {rank[0]} with {rank[1]} victory points")
             
