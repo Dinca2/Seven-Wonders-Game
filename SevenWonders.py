@@ -7,15 +7,25 @@ from Player import Player
 from AI import AI_Player
 import pandas as pd
 import random
+from sklearn import preprocessing
+import torch
+from DQN import DQN
+
 class SevenWonders:
-    def __init__(self, num_players=3,num_human=1,expansions=["base"], fast_setup=False):
+    def __init__(self, num_players=3,num_human=1,expansions=["base"], fast_setup=False, mode="eval"):
         self.num_players=num_players
         self.num_human=num_human
         self.expansions=expansions
+        self.fast_setup = fast_setup
         self.rand_boards=True
+        
         self.Players = {}
         self.decks = []
-        self.fast_setup = fast_setup
+        self.discard_pile = {}
+        
+        self.mode = mode
+        self.turn_limit = 0
+        self.hand_size = 0
         
     def setup(self):
         player_names = []
@@ -70,10 +80,15 @@ class SevenWonders:
         age1 = []
         age2 = []
         age3 = []
-        self.decks = [age1, age2,age3]
+        self.decks = [age1, age2, age3]
+        self.hand_size = len(self.decks[age])/self.num_players
+        self.card_labels = []
         for age in range(0,3):
             for index,card in age_lists[age].iterrows():
                 self.decks[age].append(Card(card["age"],card["name"],card["cost"],card["build"],card["product"],card["color"]))
+                if self.mode == "train":
+                    self.card_labels.append(card["name"])
+            self.turn_limit += self.hand_size
         #if("Cities" in expansion):
         #    cities_cards = pd.read_csv("cities_card_list")
         #    (rest of code)
@@ -107,7 +122,7 @@ class SevenWonders:
             board_list.drop(board_frame.index, inplace=True)
             board = Board(board_frame["name"],board_frame["start"],board_frame["color"],board_frame["num_stages"],board_frame["costs"],board_frame["rewards"],board_frame["time"])
             name = player_names[ai]
-            self.Players[name] = AI_Player(name, board)
+            self.Players[name] = AI_Player(name, board, self.mode, self.turn_limit, self.hand_size)
     
     def set_neighbors(self, player_names):
         n_edges = 0
@@ -288,70 +303,72 @@ class SevenWonders:
             ranking[name] = total
         
         ranking = sorted(ranking.items(), key = lambda x: x[1], reverse=True)
-
         return ranking
+    
+    def play_age(self, age):
+        #sets initial hand for each age
+        hand = {}
+        num_cards = len(self.decks[age]) #all ages should have the same # of cards
+        initial_hand_size = int(num_cards/self.num_players)
+        
+        for n in self.Players:
+            hand = {}
+            cards = random.sample(self.decks[age],k=initial_hand_size)
+            for card in cards:
+                self.decks[age].remove(card)
+                hand[card.get_name()] = card #formats hand for each card be searched by card name
+            self.Players[n].set_hand(hand)
+        
+        turn = 0
+        while turn < initial_hand_size - 1:
+            action = 0
+            card = ""
+            old_hands = {}
+            turn_actions = {}
+            turn_cards = {}
+            
+            for name in self.Players:
+                player = self.Players[name]
+                action, card = player.set_action()
+                
+                if action == 2:
+                    self.discard_pile.update({card:player.get_hand()[card]})
+                turn_actions[name] = action
+                turn_cards[name] = card
+                
+            for name in self.Players:
+                player = self.Players[name]
+                old_hands[name] = player.play_card(turn_actions[name], turn_cards[name])
+                player.give_trade()
+
+                if turn == initial_hand_size - 2:
+                    discarded = list(old_hands[name].keys())[0]
+                    self.discard_pile.update({discarded:old_hands[name][discarded]})
+                
+                if (age == 0 or age == 2):
+                    right = player.get_neighbor("right")
+                    if right.get_name() in old_hands:
+                        new_hand = old_hands[right.get_name()]
+                    else:
+                        new_hand = right.get_hand()
+                else:
+                    left = player.get_neighbor("left")
+                    if left.get_name() in old_hands:
+                        new_hand = old_hands[left.get_name()]
+                    else:
+                        new_hand = left.get_hand()
+                    
+                self.Players[name].set_hand(new_hand)
+                self.Players[name].set_discard(self.discard_pile)
+            turn += 1
         
     def play(self):
         if not self.Players:
             print("Please setup players first")
             return
-        hand = {}
-        discard_pile = {}
-        num_cards = len(self.decks[0]) #all ages should have the same # of cards
-        initial_hand_size = int(num_cards/self.num_players)
-        
+        self.discard_pile = {}
         for age in range(0,3):
-            #sets initial hand for each age
-            for n in self.Players:
-                hand = {}
-                cards = random.sample(self.decks[age],k=initial_hand_size)
-                for card in cards:
-                    self.decks[age].remove(card)
-                    hand[card.get_name()] = card #formats hand for each card be searched by card name
-                self.Players[n].set_hand(hand)
-                
-            turn = 0
-            while turn < initial_hand_size - 1:
-                action = 0
-                card = ""
-                old_hands = {}
-                turn_actions = {}
-                turn_cards = {}
-                
-                for name in self.Players:
-                    player = self.Players[name]
-                    action, card = player.set_action()
-                    
-                    if action == 2:
-                        discard_pile.update({card:player.get_hand()[card]})
-                    turn_actions[name] = action
-                    turn_cards[name] = card
-                    
-                for name in self.Players:
-                    player = self.Players[name]
-                    old_hands[name] = player.play_card(turn_actions[name], turn_cards[name])
-                    player.give_trade()
-
-                    if turn == initial_hand_size - 2:
-                        discarded = list(old_hands[name].keys())[0]
-                        discard_pile.update({discarded:old_hands[name][discarded]})
-                    
-                    if (age == 0 or age == 2):
-                        right = player.get_neighbor("right")
-                        if right.get_name() in old_hands:
-                            new_hand = old_hands[right.get_name()]
-                        else:
-                            new_hand = right.get_hand()
-                    else:
-                        left = player.get_neighbor("left")
-                        if left.get_name() in old_hands:
-                            new_hand = old_hands[left.get_name()]
-                        else:
-                            new_hand = left.get_hand()
-                        
-                    self.Players[name].set_hand(new_hand)
-                    self.Players[name].set_discard(discard_pile)
-                turn += 1
+            self.play_age(age)
             self.resolve_conflicts(age)
         
         for n in self.Players:
@@ -367,4 +384,33 @@ class SevenWonders:
                 print(f"3rd place: {rank[0]} with {rank[1]} victory points")
             else:
                 print(f"{i + 1}th place: {rank[0]} with {rank[1]} victory points")
-            
+        
+        
+    def train_ai(self):
+        learning_rate = 1e-4
+        gamma = 0.99
+        epsilon_start = 1.0
+        epsilon_end = 0.01
+        epsilon_decay = 0.995
+        batch_size = 64
+        max_memory_size = 100000
+        target_update = 10  # Update target network every 10 episodes
+        max_timesteps_per_episode = 2000  # You can adjust this limit
+
+        episode_rewards = []
+        input_dim = self.turn_limit + self.hand_size
+        output_dim = 3
+        le = preprocessing.LabelEncoder()
+        targets = le.fit_transform(self.card_labels)
+        # targets: array([0, 1, 2, 3, 4])
+
+        targets = torch.as_tensor(targets)
+        # targets: tensor([0, 1, 2, 3, 4])
+        
+        policy_net = DQN(input_dim, output_dim).to(device)
+        target_net = DQN(input_dim, output_dim).to(device)
+        target_net.load_state_dict(policy_net.state_dict())
+        target_net.eval()  # Set the target network to evaluation mode
+
+        optimizer = optim.Adam(policy_net.parameters(), lr=learning_rate)
+        memory = deque(maxlen=max_memory_size)  # Experience replay memory

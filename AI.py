@@ -1,11 +1,29 @@
 import Player
 import random
 import copy
-
+import DQN
 class AI_Player(Player.Player):
-    def __init__(self, name, board):
+    def __init__(self, name, board, mode, turn_limit, hand_size):
         super().__init__(name, board)
-    
+        self.mode = mode
+        self.turn_num = 0
+        self.cards_played = [0 for x in range(turn_limit + hand_size)]
+        
+        if mode == "train":
+            self.learning_rate = 1e-4
+            self.gamma = 0.99
+            self.epsilon_start = 1.0
+            self.epsilon_end = 0.01
+            self.epsilon_decay = 0.995
+            self.batch_size = 64
+            self.max_memory_size = 100000
+            self.target_update = 10  # Update target network every 10 episodes
+            self.max_timesteps_per_episode = 2000  # You can adjust this limit
+
+            self.episode_rewards = []
+            input_dim = turn_limit + hand_size
+            output_dim = 3
+        
     def set_action(self):
         card_name = ""
         action = 0
@@ -118,6 +136,38 @@ class AI_Player(Player.Player):
                 trade_partner = "right"
         
         return trade_partner
+    
+    def play_card(self,action, card_name):
+        card = self.hand[card_name]
+        if action == 1:
+            if card_name in self.available_cards or card_name in self.trade_cards:
+                self.add_resources(card)
+                self.card_names.append(card_name)
+                self.cards_played[self.turn_num] = card_name
+                
+                if "coin" in card.get_cost(): # only time when resources are taken
+                    for cost in card.get_cost():
+                        if cost == "coin":
+                            self.resources["coin"] -= 1
+        elif action == 2:
+            self.add_resources(["coin","coin","coin"], is_card=False)
+            self.discarded[card_name] = copy.deepcopy(card)
+            self.cards_played[self.turn_num] = card_name
+        else:
+            stage = self.board.get_stage()
+            board_reward = self.board.get_stage_reward(stage)
+            self.add_resources(board_reward, is_card=False)
+            self.board.next_stage()
+            self.stage["available"] = False
+            self.stage["trade"] = {}
+            self.cards_played[self.turn_num] = self.board.get_name() + str(self.board.get_stage())
+            
+        self.turn_num += 1
+        action_list = {1:"played", 2:"discarded", 3:"built a stage of their wonder with"}
+        print(f"{self.name} {action_list[action]} {card_name}")
+        
+        del self.hand[card_name]
+        return self.hand
     
     def view(self):
         print(f"(AI)")

@@ -62,6 +62,9 @@ class Board:
     def get_name(self):
         return self.name
     
+    def board_length(self):
+        return self.num_stages
+    
     def next_stage(self):
         if self.stage < self.num_stages:
             self.stage += 1

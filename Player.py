@@ -178,6 +178,7 @@ class Player:
             self.board.next_stage()
             self.stage["available"] = False
             self.stage["trade"] = {}
+            self.card_names.append(self.board.get_name() + str(self.board.get_stage()))
         
         action_list = {1:"played", 2:"discarded", 3:"built a stage of their wonder with"}
         print(f"{self.name} {action_list[action]} {card_name}")
@@ -359,6 +360,9 @@ class Player:
     def get_hand(self):
         return self.hand
     
+    def get_card_names(self):
+        return self.card_names
+    
     def get_color(self, color):
         return self.colors[color]
     
@@ -469,8 +473,9 @@ class Player:
                     self.trade_cards[card] = trade
                 else:
                     self.unavailable[card] = hand[card]
-        
-        self.stage_available()
+                    
+        if self.board.get_stage() < self.board.board_length():
+            self.stage_available()
         
         return self.available_cards, self.trade_cards, self.unavailable
     
@@ -587,7 +592,8 @@ class Player:
         check = copy.deepcopy(self.resources)
         available = True
         trade = {}
-        stage_cost = self.board.get_stage_cost(self.board.get_stage()) 
+        stage_cost = self.board.get_stage_cost(self.board.get_stage())
+    
         for i, cost in enumerate(stage_cost):        
             if check[cost] > 0:
                 check[cost] -= 1
@@ -619,7 +625,7 @@ class Player:
             can_trade, trade = self.trade_available(stage_cost)
             self.stage["available"] = can_trade
             self.stage["trade"] = trade
-    
+
     def view(self):
         print(f"(Human)")
         print(f"Name: {self.get_name()}")
